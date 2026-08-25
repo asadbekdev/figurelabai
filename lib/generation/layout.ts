@@ -1,4 +1,4 @@
-import type { FlowchartDocument, FlowchartNode } from "@/lib/flowchart/schema"
+import type { FlowchartDocument, FlowchartNode } from "../flowchart/schema"
 
 import type { FigureDirection } from "./contracts"
 

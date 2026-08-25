@@ -128,18 +128,22 @@ export function validateFlowchartSvg(
   }
 }
 
-export async function createFlowchartPng(
+async function rasterizeFlowchart(
   document: FlowchartDocument,
-  options: PngExportOptions
+  options: PngExportOptions,
+  format: "png" | "jpg"
 ): Promise<Blob> {
   const width = Math.round(document.page.width * options.scale)
   const height = Math.round(document.page.height * options.scale)
 
   if (width > 32_768 || height > 32_768 || width * height > 100_000_000) {
-    throw new Error("The requested PNG dimensions exceed the safe browser limit.")
+    throw new Error("The requested raster dimensions exceed the safe browser limit.")
   }
 
-  const svg = createFlowchartSvg(document, options)
+  const svg = createFlowchartSvg(document, {
+    ...options,
+    background: format === "jpg" ? "document" : options.background,
+  })
   validateFlowchartSvg(svg, document)
   const svgBlob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" })
   const source = URL.createObjectURL(svgBlob)
@@ -149,21 +153,53 @@ export async function createFlowchartPng(
     const canvas = window.document.createElement("canvas")
     canvas.width = width
     canvas.height = height
-    const context = canvas.getContext("2d", { alpha: true })
-    if (!context) throw new Error("This browser cannot create a PNG canvas.")
+    const context = canvas.getContext("2d", { alpha: format === "png" })
+    if (!context) throw new Error("This browser cannot create a raster canvas.")
+
+    if (format === "jpg") {
+      context.fillStyle = resolveBrowserColor(document.page.background)
+      context.fillRect(0, 0, width, height)
+    }
 
     context.setTransform(options.scale, 0, 0, options.scale, 0, 0)
     context.drawImage(image, 0, 0, document.page.width, document.page.height)
     context.setTransform(1, 0, 0, 1, 0, 0)
 
     if (!canvasHasVisibleContent(context, width, height)) {
-      throw new Error("The PNG validation detected a blank artifact.")
+      throw new Error("The raster validation detected a blank artifact.")
     }
 
-    return await canvasToPng(canvas)
+    return format === "jpg" ? await canvasToJpeg(canvas) : await canvasToPng(canvas)
   } finally {
     URL.revokeObjectURL(source)
   }
+}
+
+function canvasToJpeg(canvas: HTMLCanvasElement): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob && blob.size > 0) resolve(blob)
+        else reject(new Error("The JPG encoder returned an empty file."))
+      },
+      "image/jpeg",
+      0.92
+    )
+  })
+}
+
+export function createFlowchartPng(
+  document: FlowchartDocument,
+  options: PngExportOptions
+): Promise<Blob> {
+  return rasterizeFlowchart(document, options, "png")
+}
+
+export function createFlowchartJpg(
+  document: FlowchartDocument,
+  options: PngExportOptions
+): Promise<Blob> {
+  return rasterizeFlowchart(document, options, "jpg")
 }
 
 export function downloadArtifact(blob: Blob, filename: string): void {
@@ -178,7 +214,10 @@ export function downloadArtifact(blob: Blob, filename: string): void {
   window.setTimeout(() => URL.revokeObjectURL(source), 1_000)
 }
 
-export function exportFilename(title: string, extension: "svg" | "png"): string {
+export function exportFilename(
+  title: string,
+  extension: "svg" | "png" | "jpg" | "pdf" | "json" | "pptx" | "py"
+): string {
   const slug = title
     .trim()
     .toLowerCase()

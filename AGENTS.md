@@ -14,4 +14,4 @@ Before any UI work, read and follow `DESIGN.md`. Run `npm run design:audit`, `np
 
 # FigureLab product build contract
 
-Before feature work, read `docs/production-build-spec.md`. Implement its milestones in order unless the user explicitly changes the scope. Preserve the component catalog at `/components`, prove the deterministic core before adding vendors, and verify each milestone against its exit gate in the real interface.
+Before feature work, read `docs/production-build-spec.md`. Implement its milestones in order unless the user explicitly changes the scope. Release 1 is Flowchart-first; Illustration, Plot, Vector Canvas, Templates, and their related routes are preview/later work until the Flowchart production gates pass. Preserve the component catalog at `/components`, prove the deterministic core before adding vendors, and verify each milestone against its exit gate in the real interface.

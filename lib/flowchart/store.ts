@@ -2,6 +2,17 @@
 
 import { create } from "zustand"
 
+import { layoutFlowchartDocument } from "@/lib/generation/layout"
+import type { FigureDirection } from "@/lib/generation/contracts"
+import {
+  applyDocumentColorMode,
+  groupSelectedNodes,
+  omitParentId,
+  promoteReleasedNode,
+  scaleDocumentFonts,
+  ungroupSelectedNodes,
+} from "./document-edits"
+
 import { demoFlowchartDocument } from "./fixture"
 import {
   cloneFlowchartDocument,
@@ -10,6 +21,14 @@ import {
   type FlowchartEdge,
   type FlowchartNode,
 } from "./schema"
+
+export const FLOWCHART_CLIPBOARD_KIND = "figurelab-flowchart"
+
+export type FlowchartClipboard = {
+  kind: typeof FLOWCHART_CLIPBOARD_KIND
+  nodes: FlowchartNode[]
+  edges: FlowchartEdge[]
+}
 
 const HISTORY_LIMIT = 60
 
@@ -22,8 +41,10 @@ type FlowchartEditorState = {
   selectedNodeIds: string[]
   selectedEdgeId: string | null
   announcement: string
+  changeSerial: number
   commit: (updater: DocumentUpdater, announcement: string) => void
   replaceDocument: (document: FlowchartDocument, announcement: string) => void
+  loadDocument: (document: FlowchartDocument, options?: { dirty?: boolean }) => void
   selectNodes: (ids: string[]) => void
   selectEdge: (id: string | null) => void
   updateNode: (id: string, patch: Partial<FlowchartNode>) => void
@@ -32,6 +53,13 @@ type FlowchartEditorState = {
   addNode: (position?: { x: number; y: number }) => string
   addEdge: (sourceNodeId: string, targetNodeId: string) => void
   duplicateSelection: () => void
+  copySelection: () => FlowchartClipboard | null
+  pasteClipboard: (payload: FlowchartClipboard) => void
+  applyAutoLayout: (direction?: FigureDirection) => void
+  groupSelection: () => void
+  ungroupSelection: () => void
+  applyColorMode: (mode: "color" | "grayscale") => void
+  scaleFonts: (delta: number) => void
   deleteSelection: () => void
   undo: () => void
   redo: () => void
@@ -44,6 +72,17 @@ function nextId(prefix: string, ids: Iterable<string>): string {
   return `${prefix}-${index}`
 }
 
+function remapParentIds(
+  nodes: FlowchartNode[],
+  idMap: Map<string, string>
+): FlowchartNode[] {
+  return nodes.map((node) => {
+    const mappedParent = node.parentId ? idMap.get(node.parentId) : undefined
+    if (mappedParent) return { ...node, parentId: mappedParent }
+    return omitParentId(node)
+  })
+}
+
 function commitDocument(
   state: FlowchartEditorState,
   nextDocument: FlowchartDocument,
@@ -54,6 +93,7 @@ function commitDocument(
     past: [...state.past, cloneFlowchartDocument(state.document)].slice(-HISTORY_LIMIT),
     future: [],
     announcement,
+    changeSerial: state.changeSerial + 1,
   }
 }
 
@@ -64,6 +104,7 @@ export const useFlowchartEditorStore = create<FlowchartEditorState>((set, get) =
   selectedNodeIds: [],
   selectedEdgeId: null,
   announcement: "Deterministic flowchart loaded",
+  changeSerial: 0,
 
   commit: (updater, announcement) => {
     const state = get()
@@ -75,12 +116,24 @@ export const useFlowchartEditorStore = create<FlowchartEditorState>((set, get) =
     set(commitDocument(state, document, announcement))
   },
 
+  loadDocument: (document, options) => {
+    set({
+      document: parseFlowchartDocument(document),
+      past: [],
+      future: [],
+      selectedNodeIds: [],
+      selectedEdgeId: null,
+      announcement: options?.dirty ? "Recovered unsaved edits" : "Project loaded",
+      changeSerial: options?.dirty ? 1 : 0,
+    })
+  },
+
   selectNodes: (ids) => {
     const state = get()
     const selectionUnchanged =
       state.selectedEdgeId === null &&
       state.selectedNodeIds.length === ids.length &&
-      state.selectedNodeIds.every((id, index) => id === ids[index])
+      state.selectedNodeIds.every((id) => ids.includes(id))
     if (selectionUnchanged) return
 
     set({
@@ -235,11 +288,13 @@ export const useFlowchartEditorStore = create<FlowchartEditorState>((set, get) =
     const state = get()
     if (state.selectedNodeIds.length === 0) return
     const reservedIds = state.document.nodes.map((node) => node.id)
+    const idMap = new Map<string, string>()
     const copies = state.document.nodes
       .filter((node) => state.selectedNodeIds.includes(node.id))
       .map((node) => {
         const id = nextId("node", reservedIds)
         reservedIds.push(id)
+        idMap.set(node.id, id)
         return {
           ...node,
           id,
@@ -247,14 +302,139 @@ export const useFlowchartEditorStore = create<FlowchartEditorState>((set, get) =
           text: `${node.text} copy`,
         }
       })
+    const remapped = remapParentIds(copies, idMap)
     set(
       commitDocument(
         state,
-        { ...state.document, nodes: [...state.document.nodes, ...copies] },
-        copies.length === 1 ? "Node duplicated" : `${copies.length} nodes duplicated`
+        { ...state.document, nodes: [...state.document.nodes, ...remapped] },
+        remapped.length === 1 ? "Node duplicated" : `${remapped.length} nodes duplicated`
       )
     )
-    set({ selectedNodeIds: copies.map((node) => node.id), selectedEdgeId: null })
+    set({ selectedNodeIds: remapped.map((node) => node.id), selectedEdgeId: null })
+  },
+
+  copySelection: () => {
+    const state = get()
+    if (state.selectedNodeIds.length === 0) return null
+    const selected = new Set(state.selectedNodeIds)
+    return {
+      kind: FLOWCHART_CLIPBOARD_KIND,
+      nodes: state.document.nodes.filter((node) => selected.has(node.id)),
+      edges: state.document.edges.filter(
+        (edge) => selected.has(edge.sourceNodeId) && selected.has(edge.targetNodeId)
+      ),
+    }
+  },
+
+  pasteClipboard: (payload) => {
+    if (payload.kind !== FLOWCHART_CLIPBOARD_KIND || payload.nodes.length === 0) return
+    const state = get()
+    const reservedIds = state.document.nodes.map((node) => node.id)
+    const idMap = new Map<string, string>()
+    const copies = payload.nodes.map((node) => {
+      const id = nextId("node", reservedIds)
+      reservedIds.push(id)
+      idMap.set(node.id, id)
+      return {
+        ...node,
+        id,
+        position: { x: node.position.x + 32, y: node.position.y + 32 },
+      }
+    })
+    const remappedNodes = remapParentIds(copies, idMap)
+    const reservedEdgeIds = state.document.edges.map((item) => item.id)
+    const edges = payload.edges.flatMap((edge) => {
+      const sourceNodeId = idMap.get(edge.sourceNodeId)
+      const targetNodeId = idMap.get(edge.targetNodeId)
+      if (!sourceNodeId || !targetNodeId) return []
+      const id = nextId("edge", reservedEdgeIds)
+      reservedEdgeIds.push(id)
+      return [
+        {
+          ...edge,
+          id,
+          sourceNodeId,
+          targetNodeId,
+        },
+      ]
+    })
+    set(
+      commitDocument(
+        state,
+        {
+          ...state.document,
+          nodes: [...state.document.nodes, ...remappedNodes],
+          edges: [...state.document.edges, ...edges],
+        },
+        remappedNodes.length === 1 ? "Node pasted" : `${remappedNodes.length} nodes pasted`
+      )
+    )
+    set({ selectedNodeIds: remappedNodes.map((node) => node.id), selectedEdgeId: null })
+  },
+
+  applyAutoLayout: (direction = "left-right") => {
+    const state = get()
+    const next = layoutFlowchartDocument(state.document, direction)
+    set(commitDocument(state, next, `Auto-layout ${direction.replace("-", " ")}`))
+  },
+
+  groupSelection: () => {
+    const state = get()
+    const next = groupSelectedNodes(state.document, state.selectedNodeIds)
+    if (!next) {
+      set({ announcement: "Select at least two nodes to group" })
+      return
+    }
+    const group = next.nodes.find(
+      (node) => node.type === "group" && !state.document.nodes.some((item) => item.id === node.id)
+    )
+    set({
+      ...commitDocument(state, next, "Nodes grouped"),
+      selectedNodeIds: group ? [group.id] : state.selectedNodeIds,
+      selectedEdgeId: null,
+    })
+  },
+
+  ungroupSelection: () => {
+    const state = get()
+    const next = ungroupSelectedNodes(state.document, state.selectedNodeIds)
+    if (!next) {
+      set({ announcement: "Select a group to ungroup" })
+      return
+    }
+    const released = next.nodes
+      .filter((node) => {
+        const previous = state.document.nodes.find((item) => item.id === node.id)
+        return Boolean(previous?.parentId && !node.parentId)
+      })
+      .map((node) => node.id)
+    set({
+      ...commitDocument(state, next, "Nodes ungrouped"),
+      selectedNodeIds: released,
+      selectedEdgeId: null,
+    })
+  },
+
+  applyColorMode: (mode) => {
+    const state = get()
+    set(
+      commitDocument(
+        state,
+        applyDocumentColorMode(state.document, mode),
+        mode === "grayscale" ? "Converted to grayscale" : "Color mode"
+      )
+    )
+  },
+
+  scaleFonts: (delta) => {
+    const state = get()
+    set(
+      commitDocument(
+        state,
+        scaleDocumentFonts(state.document, delta),
+        delta > 0 ? "Fonts grown" : "Fonts shrunk"
+      )
+    )
   },
 
   deleteSelection: () => {
@@ -277,7 +457,15 @@ export const useFlowchartEditorStore = create<FlowchartEditorState>((set, get) =
         state,
         {
           ...state.document,
-          nodes: state.document.nodes.filter((node) => !selectedNodes.has(node.id)),
+          nodes: state.document.nodes
+            .filter((node) => !selectedNodes.has(node.id))
+            .map((node) =>
+              promoteReleasedNode(
+                node,
+                selectedNodes,
+                new Map(state.document.nodes.map((item) => [item.id, item]))
+              )
+            ),
           edges: state.document.edges.filter(
             (edge) =>
               edge.id !== state.selectedEdgeId &&
@@ -308,6 +496,7 @@ export const useFlowchartEditorStore = create<FlowchartEditorState>((set, get) =
       selectedNodeIds: [],
       selectedEdgeId: null,
       announcement: "Change undone",
+      changeSerial: state.changeSerial + 1,
     })
   },
 
@@ -322,6 +511,7 @@ export const useFlowchartEditorStore = create<FlowchartEditorState>((set, get) =
       selectedNodeIds: [],
       selectedEdgeId: null,
       announcement: "Change redone",
+      changeSerial: state.changeSerial + 1,
     })
   },
 }))

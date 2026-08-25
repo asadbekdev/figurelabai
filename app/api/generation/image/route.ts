@@ -32,6 +32,16 @@ export async function POST(request: Request) {
     const image = await generateGeminiImage({
       prompt: parsed.data.prompt,
       aspectRatio: parsed.data.aspectRatio,
+      style: parsed.data.style,
+      inputMode: parsed.data.inputMode,
+      visualConsistency: parsed.data.visualConsistency,
+      paletteColors: parsed.data.paletteColors,
+      imageSize: parsed.data.imageSize,
+      offering: parsed.data.offering,
+      sourceImage: parsed.data.sourceImage,
+      referenceImage: parsed.data.referenceImage,
+      tabularData: parsed.data.tabularData,
+      purpose: parsed.data.purpose,
       signal: request.signal,
     })
     return apiSuccess({

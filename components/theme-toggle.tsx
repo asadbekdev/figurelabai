@@ -1,16 +1,16 @@
 "use client"
 
 import { useSyncExternalStore } from "react"
-import { MoonIcon, SunIcon } from "lucide-react"
+import { MoonIcon, SunIcon } from "@/components/icons"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import { useTheme } from "next-themes"
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/align/button"
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
+} from "@/components/align/tooltip"
 
 export function ThemeToggle() {
   const mounted = useSyncExternalStore(

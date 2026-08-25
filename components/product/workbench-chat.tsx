@@ -1,13 +1,13 @@
 "use client"
 
 import { useId, useState } from "react"
-import { ArrowUpIcon, LoaderCircleIcon, MessageSquareIcon, SparklesIcon } from "lucide-react"
+import { ArrowUpIcon, LoaderCircleIcon, MessageSquareIcon, SparklesIcon } from "@/components/icons"
 
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Textarea } from "@/components/ui/textarea"
+import { Alert, AlertDescription, AlertTitle } from "@/components/align/alert"
+import { Button } from "@/components/align/button"
+import { Label } from "@/components/align/label"
+import { ScrollArea } from "@/components/align/scroll-area"
+import { Textarea } from "@/components/align/textarea"
 import { ApiRequestError, postJson } from "@/lib/api/client"
 import { cn } from "@/lib/utils"
 import { useGenerationSessionStore } from "@/lib/generation/session-store"
@@ -66,12 +66,12 @@ export function WorkbenchChat({ className }: { className?: string }) {
   return (
     <section
       className={cn(
-        "continuous-corners rounded-2xl bg-surface p-4 surface-outline",
+        "rounded-lg border border-border bg-background p-4",
         className
       )}
     >
       <div className="flex items-start gap-3">
-        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-muted">
+        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted">
           <MessageSquareIcon className="size-4" aria-hidden="true" />
         </span>
         <div className="min-w-0">
@@ -82,7 +82,7 @@ export function WorkbenchChat({ className }: { className?: string }) {
         </div>
       </div>
 
-      <ScrollArea className="mt-4 h-64 rounded-xl bg-surface-subtle">
+      <ScrollArea className="mt-4 h-64 rounded-lg bg-sidebar">
         <div className="space-y-3 p-3">
           {messages.length === 0 && (
             <p className="text-meta text-muted-foreground">
@@ -94,10 +94,10 @@ export function WorkbenchChat({ className }: { className?: string }) {
             <article
               key={message.id}
               className={cn(
-                "max-w-[36rem] rounded-2xl px-3 py-2 text-sm",
+                "max-w-[36rem] rounded-lg px-3 py-2 text-sm",
                 message.role === "user"
                   ? "ms-auto bg-muted"
-                  : "bg-surface-raised surface-outline"
+                  : "border border-border bg-background"
               )}
             >
               <p className="flex items-center gap-1.5 text-caption text-muted-foreground">

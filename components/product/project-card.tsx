@@ -1,26 +1,26 @@
 "use client"
 
-import { MoreHorizontalIcon, PencilIcon } from "lucide-react"
+import { MoreHorizontalIcon, PencilIcon } from "@/components/icons"
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/align/button"
 import {
   Card,
   CardAction,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/align/card"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/align/dropdown-menu"
 
 export function ProjectCard() {
   return (
-    <Card className="surface-outline-hover">
+    <Card>
       <CardContent className="px-3 pt-3">
         <div className="image-outline overflow-hidden rounded-lg bg-surface-subtle p-5">
           <svg

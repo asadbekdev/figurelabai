@@ -83,6 +83,7 @@ export const flowchartDocumentSchema = z
         height: finiteNumber.min(240).max(20_000),
         background: color,
         padding: finiteNumber.min(0).max(1_000),
+        colorMode: z.enum(["color", "grayscale"]).optional(),
       })
       .strict(),
     viewport: z
@@ -144,13 +145,38 @@ export const flowchartDocumentSchema = z
       }
     })
 
+    const nodesById = new Map(document.nodes.map((node) => [node.id, node]))
     document.nodes.forEach((node, index) => {
-      if (node.parentId && !nodeIds.has(node.parentId)) {
+      if (!node.parentId) return
+      if (!nodeIds.has(node.parentId)) {
         context.addIssue({
           code: "custom",
           message: `Missing parent node: ${node.parentId}`,
           path: ["nodes", index, "parentId"],
         })
+        return
+      }
+      const parent = nodesById.get(node.parentId)
+      if (parent && parent.type !== "group") {
+        context.addIssue({
+          code: "custom",
+          message: "A node parent must be a group.",
+          path: ["nodes", index, "parentId"],
+        })
+      }
+      const walked = new Set<string>()
+      let current: string | undefined = node.parentId
+      while (current) {
+        if (current === node.id || walked.has(current)) {
+          context.addIssue({
+            code: "custom",
+            message: "Group parentage cannot form a cycle.",
+            path: ["nodes", index, "parentId"],
+          })
+          break
+        }
+        walked.add(current)
+        current = nodesById.get(current)?.parentId
       }
     })
   })

@@ -2,7 +2,7 @@
 
 Status: implementation source of truth  
 Audience: Cursor, Codex, and human contributors  
-Last updated: 2026-08-19
+Last updated: 2026-08-24
 
 This document turns the product research and design system into an executable production plan. It defines what to build, in what order, which contracts must remain stable, and what evidence is required before a milestone is considered complete.
 
@@ -23,14 +23,16 @@ Do not silently convert an observed competitor behavior into a committed FigureL
 The repository currently contains:
 
 - Next.js 16.3.1 App Router, React 19, TypeScript, and Tailwind CSS 4.
-- A completed visual foundation and component catalog rendered at `/`.
-- Reusable UI primitives in `components/ui/`.
-- Product patterns in `components/product/`.
-- Zustand, Motion, Lucide, and PptxGenJS dependencies.
-- No database, authentication, object storage, job runner, AI provider, or real diagram engine.
-- No production routes other than the component-library home page.
+- Component catalog at `/components` and an Align UI AI Product-derived shell at `/`, `/projects`, `/library`, and `/project/[projectId]`.
+- Repository-owned Align UI primitives in `components/align/` and product patterns in `components/product/`.
+- Zustand, Motion, Hugeicons Stroke Rounded, React Flow, and Zod.
+- Milestones 1–2 local slice: canonical flowchart editor plus deterministic SVG/PNG export and readiness checks.
+- Local persistence prototype toward Milestone 3: IndexedDB projects, revisions, versions, recovery, library assets, and recents. This does not satisfy the PostgreSQL/DAL milestone or its cross-device exit gate.
+- Local generation prototype toward Milestone 4: `JobRunner` + `ModelProvider` interfaces, a file-backed single-host runner, fixture provider first, and Gemini behind the same interface. This does not satisfy multi-instance worker durability or the production exit gate.
+- Illustration, Plot, Vector Canvas, Library/Templates, PDF/PPTX, and snapshot sharing implementations are preview/later slices. Their presence in the repository does not promote them into Release 1.
+- No PostgreSQL, Better Auth, object storage, Trigger.dev, or Stripe yet. Those remain later milestones.
 
-The current UI is a design-system prototype, not a functioning application. Preserve it by moving it to `/components`; do not destroy it while building the product.
+Preserve the catalog at `/components` while building the product.
 
 ## 2. Product definition
 
@@ -116,8 +118,10 @@ The preflight is not decorative. It must expose the interpreted goal, figure typ
 | `/projects` | Searchable project list | R1 |
 | `/project/[projectId]` | Stable editor shell | R1 |
 | `/library` | Generated assets and exports | R1.1 |
+| `/templates` | Starter gallery | Preview / Later |
 | `/vector-canvas` | Standalone vector asset assembly | Later |
 | `/share/[token]` | Read-only shared project or artifact | R1.1 |
+| `/api` | Local workspace figure API reference | Local slice |
 | `/pricing` | Plans and credit explanation | Billing phase |
 | `/settings/profile` | User profile | Auth phase |
 | `/settings/workspace` | Workspace members and role | Team phase |
@@ -170,7 +174,7 @@ flowchart TB
 | --- | --- | --- |
 | Web framework | Existing Next.js 16 App Router | Already installed; server and client boundaries in one repository |
 | Language | Strict TypeScript | Shared contracts and safe document migrations |
-| UI | Existing Tailwind/Radix component system | Already aligned with `DESIGN.md` |
+| UI | Repository-owned `components/align/` components with Tailwind and accessible headless behavior | Figma is the visual authority; Radix/cmdk/Sonner/Vaul may remain implementation details |
 | Diagram engine | `@xyflow/react` | Mature node/edge interaction, custom nodes, keyboard support, and MIT license |
 | Ephemeral editor state | Existing Zustand | Selection, panels, draft interactions, history cursor |
 | Validation | Zod | Runtime validation at every external/data boundary |
@@ -243,7 +247,7 @@ app/
     uploads/presign/route.ts
     webhooks/stripe/route.ts
 components/
-  ui/                       # generic primitives
+  align/                    # repository-owned Align primitives; the only generic component boundary
   product/                  # reusable product patterns
   workbench/
   editor/
@@ -579,6 +583,14 @@ Patch operations may be added after the full-document save path is correct. Do n
 - `GET /api/generation/jobs/:id` — durable status snapshot.
 - `POST /api/generation/jobs/:id/cancel` — best-effort cancel with deterministic credit policy.
 - Status updates use server-sent events or the job runner's authenticated realtime channel; polling remains a fallback.
+
+### Local workspace figure API
+
+Local HTTP surface for the same JobRunner path. Documented in-app at `/api`. No auth unless `FIGURELAB_API_KEY` is set. It is a development/local integration surface, not a production API contract.
+
+- `POST /api/v1/figures` — prompt, mode (`illustration` | `flowchart` | `plot`), optional image. Returns job id and `pollUrl`. Flowchart is the only R1 mode; Illustration and Plot responses are preview-only.
+- `GET /api/v1/figures/:jobId` — poll until `succeeded`, `failed`, or `canceled`.
+- Optional `X-Api-Key` or `Authorization: Bearer` when `FIGURELAB_API_KEY` is present.
 
 ### Exports
 
@@ -1063,9 +1075,9 @@ Exit gate: edit, reload, reopen, restore, and export all operate on the correct 
 
 - Implement editable preflight planning with a deterministic fixture provider first.
 - Add `JobRunner` and `ModelProvider` interfaces.
-- Add durable job records and a Trigger.dev worker.
-- Add validation, retries, cancellation, and authenticated status updates.
-- Add a real provider only after the fixture pipeline passes.
+- Add durable job records. Use a local file-backed runner (`.data/generation-jobs.json`) until Trigger.dev is approved.
+- Add validation, retries, cancellation, and status updates (polling now; authenticated realtime later).
+- Add a real provider only after the fixture pipeline passes. Gemini stays server-only behind `ModelProvider`.
 - Persist a structural draft before optional post-processing.
 - Add the project conversation composer for revision requests.
 
@@ -1109,6 +1121,8 @@ Order after flowchart retention evidence:
 6. Templates and referrals.
 
 Every mode must reuse project, job, version, permission, asset, export, and billing contracts.
+
+Existing Illustration, Plot, Vector Canvas, Templates, Library, PDF/PPTX, and snapshot-sharing code is preview inventory, not evidence that this milestone has started or passed. Preview surfaces must say `Preview` or `Later`, must not become the default R1 path, and may not bypass Milestones 3–7. Promotion requires the relevant shared server contracts and an explicit exit gate.
 
 ## 27. First Cursor task
 

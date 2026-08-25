@@ -4,10 +4,12 @@ import {
   memo,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
 } from "react"
 import {
   applyEdgeChanges,
@@ -19,7 +21,6 @@ import {
   ReactFlow,
   ReactFlowProvider,
   reconnectEdge,
-  useNodesInitialized,
   useReactFlow,
   useStoreApi,
   type Connection,
@@ -29,33 +30,41 @@ import {
 } from "@xyflow/react"
 import {
   CopyIcon,
+  Layers3Icon,
   LockIcon,
   Maximize2Icon,
+  MoreHorizontalIcon,
+  PaletteIcon,
   PlusIcon,
   Redo2Icon,
+  Settings2Icon,
   Trash2Icon,
+  TypeIcon,
   Undo2Icon,
-} from "lucide-react"
+} from "@/components/icons"
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { ProjectVersionsPanel } from "@/components/product/project-versions-panel"
+import { Badge } from "@/components/align/badge"
+import { Button } from "@/components/align/button"
+import { Input } from "@/components/align/input"
+import { Label } from "@/components/align/label"
+import { ScrollArea } from "@/components/align/scroll-area"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/align/tabs"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { ScrollArea } from "@/components/ui/scroll-area"
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/align/dropdown-menu"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/align/select"
 import {
   Sheet,
   SheetContent,
@@ -63,8 +72,8 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet"
-import { Switch } from "@/components/ui/switch"
+} from "@/components/align/sheet"
+import { Switch } from "@/components/align/switch"
 import { cn } from "@/lib/utils"
 import {
   documentToReactFlow,
@@ -77,7 +86,27 @@ import {
   type FlowchartNodeType,
 } from "@/lib/flowchart/schema"
 import { documentColorOptions } from "@/lib/flowchart/palette"
-import { useFlowchartEditorStore } from "@/lib/flowchart/store"
+import { runFlowchartReadiness } from "@/lib/flowchart/readiness"
+import {
+  anchoredEditorViewport,
+  editorFitViewOptions,
+  shouldRefitEditor,
+} from "@/lib/flowchart/editor-fit"
+import {
+  canGroupSelectedNodes,
+  nodeDepth,
+  nodesInTreeOrder,
+} from "@/lib/flowchart/document-edits"
+import {
+  FLOWCHART_CLIPBOARD_KIND,
+  useFlowchartEditorStore,
+  type FlowchartClipboard,
+} from "@/lib/flowchart/store"
+import {
+  useProjectSessionStore,
+  type ProjectSaveState,
+} from "@/lib/product/project-session"
+import { isMemoryWorkspace } from "@/lib/product/workspace-runtime"
 
 const nodeTypeLabels: Record<FlowchartNodeType, string> = {
   process: "Process",
@@ -111,7 +140,6 @@ const FlowchartNodeView = memo(function FlowchartNodeView({
   data,
   selected,
 }: NodeProps<FlowchartReactNode>) {
-  console.count("render:NodeView")
   const node = data.node
   const updateNode = useFlowchartEditorStore((state) => state.updateNode)
   const selectNodes = useFlowchartEditorStore((state) => state.selectNodes)
@@ -146,6 +174,7 @@ const FlowchartNodeView = memo(function FlowchartNodeView({
     ? {
         color: node.style.textColor,
         fontSize: node.style.fontSize,
+        "--flowchart-font-size": `${node.style.fontSize}px`,
       }
     : {
         background: node.style.fill,
@@ -154,6 +183,7 @@ const FlowchartNodeView = memo(function FlowchartNodeView({
         borderRadius: node.type === "terminator" ? 999 : node.style.radius,
         color: node.style.textColor,
         fontSize: node.style.fontSize,
+        "--flowchart-font-size": `${node.style.fontSize}px`,
         boxShadow: selected
           ? "0 0 0 1px var(--ring), 0 0 0 5px color-mix(in oklch, var(--ring) 16%, transparent)"
           : undefined,
@@ -165,7 +195,7 @@ const FlowchartNodeView = memo(function FlowchartNodeView({
         type="target"
         position={Position.Left}
         aria-label={"Connect into " + node.text}
-        className="size-3 border-2 border-surface-raised bg-foreground"
+        className="flowchart-handle size-3 border-2 border-surface-raised bg-foreground"
       />
       <div
         className={nodeShapeClass(node.type)}
@@ -214,21 +244,24 @@ const FlowchartNodeView = memo(function FlowchartNodeView({
             onKeyDown={handleEditorKeyDown}
           />
         ) : (
-          <span className="relative line-clamp-4 font-medium">{node.text}</span>
+          <span className="flowchart-node-label relative line-clamp-4 font-medium">
+            {node.text}
+          </span>
         )}
       </div>
       <Handle
         type="source"
         position={Position.Right}
         aria-label={"Connect from " + node.text}
-        className="size-3 border-2 border-surface-raised bg-foreground"
+        className="flowchart-handle size-3 border-2 border-surface-raised bg-foreground"
       />
       {!node.locked && (
         <button
           type="button"
           aria-label={"Add a connected node after " + node.text}
           title="Add connected node"
-          className="nodrag absolute top-1/2 -right-9 z-10 grid size-7 -translate-y-1/2 place-items-center rounded-full border bg-surface-raised text-foreground opacity-0 shadow-surface outline-none motion-safe:transition-[opacity,background-color,scale] motion-safe:duration-150 hover:bg-muted focus-visible:opacity-100 active:scale-[0.96] group-hover:opacity-100"
+          data-selected={selected ? "true" : undefined}
+          className="flowchart-add-connected nodrag absolute top-1/2 -end-9 z-10 grid size-8 -translate-y-1/2 place-items-center rounded-lg border bg-background text-foreground opacity-0 outline-none motion-safe:transition-[opacity,background-color,scale] motion-safe:duration-150 hover:bg-hover-veil focus-visible:opacity-100 active:scale-[0.96] group-hover:opacity-100"
           onClick={addConnectedNode}
         >
           <PlusIcon className="size-4" aria-hidden="true" />
@@ -243,28 +276,39 @@ const multiSelectionKeys = ["Meta", "Control", "Shift"]
 const panOnDragButtons = [1, 2]
 const reactFlowProOptions = { hideAttribution: true }
 
-function EditorPanel({
-  title,
-  description,
-  children,
-}: {
-  title: string
-  description: string
-  children: React.ReactNode
-}) {
-  return (
-    <Card className="h-full gap-0 border-border/70 bg-surface/70 py-0 shadow-none">
-      <CardHeader className="border-b border-border/60 px-4 py-3">
-        <CardTitle className="text-ui">{title}</CardTitle>
-        <CardDescription className="text-caption">{description}</CardDescription>
-      </CardHeader>
-      <CardContent className="p-3">{children}</CardContent>
-    </Card>
-  )
+function editorSaveLabel(saveState: ProjectSaveState, revision: number) {
+  if (saveState === "loading") return "Loading"
+  if (saveState === "saving") return "Saving…"
+  if (saveState === "dirty") return "Unsaved changes"
+  if (saveState === "offline") {
+    return isMemoryWorkspace() ? "Storage unavailable · not saved" : "Offline · saved locally"
+  }
+  if (saveState === "conflict") return "Save conflict"
+  if (saveState === "ready") return "Ready to save"
+  return revision > 0 ? `Saved · rev ${revision}` : "Saved locally"
+}
+
+function reactNodesEquivalent(
+  first: FlowchartReactNode[],
+  second: FlowchartReactNode[]
+) {
+  if (first.length !== second.length) return false
+  return first.every((node, index) => {
+    const other = second[index]
+    return (
+      other !== undefined &&
+      node.id === other.id &&
+      node.position.x === other.position.x &&
+      node.position.y === other.position.y &&
+      node.selected === other.selected &&
+      node.parentId === other.parentId &&
+      node.style?.width === other.style?.width &&
+      node.style?.height === other.style?.height
+    )
+  })
 }
 
 function FlowchartObjectList({ onObjectFocus }: { onObjectFocus?: () => void }) {
-  console.count("render:ObjectList")
   const flowchart = useFlowchartEditorStore((state) => state.document)
   const selectedNodeIds = useFlowchartEditorStore((state) => state.selectedNodeIds)
   const selectedEdgeId = useFlowchartEditorStore((state) => state.selectedEdgeId)
@@ -292,6 +336,12 @@ function FlowchartObjectList({ onObjectFocus }: { onObjectFocus?: () => void }) 
     })
   }
 
+  const nodesById = useMemo(
+    () => new Map(flowchart.nodes.map((node) => [node.id, node])),
+    [flowchart.nodes]
+  )
+  const listedNodes = useMemo(() => nodesInTreeOrder(flowchart.nodes), [flowchart.nodes])
+
   const focusEdge = async (edgeId: string) => {
     selectEdge(edgeId)
     const edge = flowchart.edges.find((item) => item.id === edgeId)
@@ -318,7 +368,7 @@ function FlowchartObjectList({ onObjectFocus }: { onObjectFocus?: () => void }) 
   }
 
   return (
-    <ScrollArea className="h-128 pr-3" data-flowchart-shortcuts>
+    <ScrollArea className="h-full pr-3" data-flowchart-shortcuts>
       <div className="space-y-5">
         <section aria-labelledby="node-list-title">
           <div className="mb-2 flex items-center justify-between gap-2">
@@ -330,18 +380,31 @@ function FlowchartObjectList({ onObjectFocus }: { onObjectFocus?: () => void }) 
             </Badge>
           </div>
           <div className="space-y-1">
-            {flowchart.nodes.map((node) => (
+            {listedNodes.map((node) => (
               <button
                 key={node.id}
                 type="button"
                 aria-pressed={selectedNodeIds.includes(node.id)}
+                style={{
+                  paddingLeft: 12 + nodeDepth(node, nodesById) * 12,
+                }}
                 className={cn(
-                  "flex w-full items-start gap-2 rounded-lg px-3 py-2 text-start outline-none motion-safe:transition-[background-color,color,scale] motion-safe:duration-150 focus-visible:ring-3 focus-visible:ring-ring/50 active:scale-[0.96]",
+                  "flex w-full items-start gap-2 rounded-lg py-2 pr-3 text-start outline-none motion-safe:transition-[background-color,color,scale] motion-safe:duration-150 focus-visible:ring-3 focus-visible:ring-ring/50 active:scale-[0.96]",
                   selectedNodeIds.includes(node.id)
                     ? "bg-accent text-accent-foreground"
                     : "hover:bg-muted"
                 )}
-                onClick={() => void focusNode(node.id)}
+                onClick={(event) => {
+                  if (event.shiftKey || event.metaKey || event.ctrlKey) {
+                    event.preventDefault()
+                    const next = selectedNodeIds.includes(node.id)
+                      ? selectedNodeIds.filter((id) => id !== node.id)
+                      : [...selectedNodeIds, node.id]
+                    selectNodes(next)
+                    return
+                  }
+                  void focusNode(node.id)
+                }}
               >
                 {node.locked ? (
                   <LockIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
@@ -484,7 +547,6 @@ function ColorField({
 }
 
 function FlowchartInspector() {
-  console.count("render:Inspector")
   const flowchart = useFlowchartEditorStore((state) => state.document)
   const selectedNodeIds = useFlowchartEditorStore((state) => state.selectedNodeIds)
   const selectedEdgeId = useFlowchartEditorStore((state) => state.selectedEdgeId)
@@ -511,6 +573,16 @@ function FlowchartInspector() {
   }
 
   if (selectedNode) {
+    const sourceExcerpt =
+      typeof selectedNode.data?.sourceExcerpt === "string"
+        ? selectedNode.data.sourceExcerpt.trim()
+        : ""
+    const sourcePage =
+      typeof selectedNode.data?.sourcePage === "string" ||
+      typeof selectedNode.data?.sourcePage === "number"
+        ? String(selectedNode.data.sourcePage)
+        : ""
+
     return (
       <div className="space-y-5">
         <div className="space-y-1.5">
@@ -617,6 +689,20 @@ function FlowchartInspector() {
             onCheckedChange={(locked) => updateNode(selectedNode.id, { locked })}
           />
         </div>
+
+        <div className="rounded-md border border-border p-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-ui font-medium">Source context</p>
+            {sourcePage ? <Badge variant="outline">Page {sourcePage}</Badge> : null}
+          </div>
+          <p className="mt-1 text-caption text-muted-foreground">
+            {sourceExcerpt
+              ? sourceExcerpt
+              : flowchart.metadata.sourceAssetIds.length > 0
+                ? "This figure has linked sources, but this node has no page-level excerpt yet."
+                : "Prompt-derived node. No source excerpt is linked."}
+          </p>
+        </div>
       </div>
     )
   }
@@ -718,6 +804,72 @@ function FlowchartInspector() {
   )
 }
 
+function FlowchartReadinessPanel() {
+  const flowchart = useFlowchartEditorStore((state) => state.document)
+  const selectNodes = useFlowchartEditorStore((state) => state.selectNodes)
+  const selectEdge = useFlowchartEditorStore((state) => state.selectEdge)
+  const report = useMemo(() => runFlowchartReadiness(flowchart), [flowchart])
+
+  return (
+    <section aria-labelledby="editor-readiness-title" className="space-y-3">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 id="editor-readiness-title" className="text-ui font-medium">
+            Publication readiness
+          </h3>
+          <p className="mt-1 text-caption text-muted-foreground">
+            Deterministic checks run on the saved figure, not a screenshot.
+          </p>
+        </div>
+        <Badge variant={report.ready ? "secondary" : "destructive"}>
+          {report.ready ? "Ready" : `${report.errors} ${report.errors === 1 ? "blocker" : "blockers"}`}
+        </Badge>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 text-center">
+        <div className="rounded-lg bg-muted p-3">
+          <p className="text-title-sm font-semibold tabular-nums">{report.errors}</p>
+          <p className="text-caption text-muted-foreground">Errors</p>
+        </div>
+        <div className="rounded-lg bg-muted p-3">
+          <p className="text-title-sm font-semibold tabular-nums">{report.warnings}</p>
+          <p className="text-caption text-muted-foreground">Warnings</p>
+        </div>
+      </div>
+
+      {report.issues.length === 0 ? (
+        <div className="rounded-lg bg-muted p-3 text-meta text-muted-foreground">
+          No publication blockers or warnings were found.
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          {report.issues.map((issue) => (
+            <button
+              key={issue.id}
+              type="button"
+              className="w-full rounded-lg border border-border px-3 py-2.5 text-start outline-none hover:bg-hover-veil focus-visible:ring-3 focus-visible:ring-ring/50"
+              onClick={() => {
+                if (issue.nodeIds.length > 0) selectNodes(issue.nodeIds)
+                else if (issue.edgeIds[0]) selectEdge(issue.edgeIds[0])
+              }}
+            >
+              <span className="flex items-center justify-between gap-2">
+                <span className="text-ui font-medium">{issue.title}</span>
+                <Badge variant={issue.severity === "error" ? "destructive" : "outline"}>
+                  {issue.severity}
+                </Badge>
+              </span>
+              <span className="mt-1 block text-caption text-muted-foreground">
+                {issue.description}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
 type EdgeLabelEditor = {
   id: string
   left: number
@@ -725,8 +877,7 @@ type EdgeLabelEditor = {
   text: string
 }
 
-function FlowchartCanvas() {
-  console.count("render:Canvas")
+function FlowchartCanvas({ railTrigger }: { railTrigger?: ReactNode }) {
   const canvasRef = useRef<HTMLDivElement>(null)
   const flowchart = useFlowchartEditorStore((state) => state.document)
   const selectedNodeIds = useFlowchartEditorStore((state) => state.selectedNodeIds)
@@ -738,16 +889,29 @@ function FlowchartCanvas() {
   const updateEdge = useFlowchartEditorStore((state) => state.updateEdge)
   const updateViewport = useFlowchartEditorStore((state) => state.updateViewport)
   const duplicateSelection = useFlowchartEditorStore((state) => state.duplicateSelection)
+  const copySelection = useFlowchartEditorStore((state) => state.copySelection)
+  const pasteClipboard = useFlowchartEditorStore((state) => state.pasteClipboard)
+  const applyAutoLayout = useFlowchartEditorStore((state) => state.applyAutoLayout)
+  const groupSelection = useFlowchartEditorStore((state) => state.groupSelection)
+  const ungroupSelection = useFlowchartEditorStore((state) => state.ungroupSelection)
+  const applyColorMode = useFlowchartEditorStore((state) => state.applyColorMode)
+  const scaleFonts = useFlowchartEditorStore((state) => state.scaleFonts)
   const deleteSelection = useFlowchartEditorStore((state) => state.deleteSelection)
   const undo = useFlowchartEditorStore((state) => state.undo)
   const redo = useFlowchartEditorStore((state) => state.redo)
   const past = useFlowchartEditorStore((state) => state.past)
   const future = useFlowchartEditorStore((state) => state.future)
   const announcement = useFlowchartEditorStore((state) => state.announcement)
-  const { fitView, getViewport } = useReactFlow<FlowchartReactNode, FlowchartReactEdge>()
+  const saveState = useProjectSessionStore((state) => state.saveState)
+  const revision = useProjectSessionStore((state) => state.revision)
+  const { fitView, getNodesBounds, getViewport, setViewport } = useReactFlow<
+    FlowchartReactNode,
+    FlowchartReactEdge
+  >()
   const reactFlowStore = useStoreApi<FlowchartReactNode, FlowchartReactEdge>()
-  const nodesInitialized = useNodesInitialized()
   const initialFitComplete = useRef(false)
+  const canvasSizeRef = useRef<{ width: number; height: number } | null>(null)
+  const resizeFitFrameRef = useRef(0)
   // Keyed on document structure only: viewport moves preserve array identity
   // in the store, so they never force a canvas rebuild.
   const adapted = useMemo(
@@ -766,27 +930,78 @@ function FlowchartCanvas() {
   }))
   const nodesRef = useRef(canvasState.nodes)
   const edgesRef = useRef(canvasState.edges)
+  const canvasSourceRef = useRef(adapted)
+  const ignoreProgrammaticPositionsRef = useRef(false)
+  const programmaticReleaseFramesRef = useRef<[number, number]>([0, 0])
+  const draggingNodeIdsRef = useRef(new Set<string>())
+  const positionCommitTimerRef = useRef(0)
   const [edgeLabelEditor, setEdgeLabelEditor] = useState<EdgeLabelEditor | null>(null)
 
-  if (canvasState.source !== adapted) {
-    // Rebuild for structural changes, carrying selection flags forward so
-    // React Flow's internal selection stays consistent with what it reports.
-    const selectedBefore = new Set(
-      nodesRef.current.filter((node) => node.selected).map((node) => node.id)
-    )
+  const fitEditorView = useCallback(
+    async (duration: number) => {
+      const size = canvasSizeRef.current
+      const currentNodes = nodesRef.current
+      if (!size || size.width <= 0 || size.height <= 0 || currentNodes.length === 0) return
+
+      try {
+        await fitView(editorFitViewOptions<FlowchartReactNode>(size.width, duration))
+        const viewport = getViewport()
+        const bounds = getNodesBounds(currentNodes)
+        const anchored = anchoredEditorViewport({ size, bounds, viewport })
+        if (anchored) await setViewport(anchored, { duration: 0 })
+      } catch {
+        // React Flow can still be measuring handles while a restored document
+        // replaces the initial canvas. Fitting is progressive enhancement and
+        // must never take down the editor route.
+      }
+    },
+    [fitView, getNodesBounds, getViewport, setViewport]
+  )
+
+  useLayoutEffect(() => {
+    if (canvasSourceRef.current === adapted) return
+    canvasSourceRef.current = adapted
+
+    // Apply a newly loaded or structurally edited document after React commits.
+    // Updating controlled React Flow props during render makes StoreUpdater call
+    // setNodes recursively and can crash the whole project route on restoration.
+    const selection = useFlowchartEditorStore.getState()
+    const storeSelection = new Set(selection.selectedNodeIds)
     const selectedEdgesBefore = new Set(
-      edgesRef.current.filter((edge) => edge.selected).map((edge) => edge.id)
+      selection.selectedEdgeId
+        ? [selection.selectedEdgeId]
+        : edgesRef.current.filter((edge) => edge.selected).map((edge) => edge.id)
     )
     const nextNodes = adapted.nodes.map((node) =>
-      selectedBefore.has(node.id) ? { ...node, selected: true } : node
+      storeSelection.has(node.id) ? { ...node, selected: true } : node
     )
     const nextEdges = adapted.edges.map((edge) =>
       selectedEdgesBefore.has(edge.id) ? { ...edge, selected: true } : edge
     )
+
     nodesRef.current = nextNodes
     edgesRef.current = nextEdges
+    ignoreProgrammaticPositionsRef.current = true
+    const [previousOuterFrame, previousInnerFrame] = programmaticReleaseFramesRef.current
+    window.cancelAnimationFrame(previousOuterFrame)
+    window.cancelAnimationFrame(previousInnerFrame)
+    const outerFrame = window.requestAnimationFrame(() => {
+      const innerFrame = window.requestAnimationFrame(() => {
+        ignoreProgrammaticPositionsRef.current = false
+        programmaticReleaseFramesRef.current = [0, 0]
+      })
+      programmaticReleaseFramesRef.current = [outerFrame, innerFrame]
+    })
+    programmaticReleaseFramesRef.current = [outerFrame, 0]
     setCanvasState({ source: adapted, nodes: nextNodes, edges: nextEdges })
-  }
+
+    return () => {
+      const [scheduledOuterFrame, scheduledInnerFrame] = programmaticReleaseFramesRef.current
+      window.cancelAnimationFrame(scheduledOuterFrame)
+      window.cancelAnimationFrame(scheduledInnerFrame)
+      programmaticReleaseFramesRef.current = [0, 0]
+    }
+  }, [adapted])
 
   const nodes = canvasState.nodes
   const edges = canvasState.edges
@@ -806,7 +1021,6 @@ function FlowchartCanvas() {
       currentNodeSelection.every((id) => selectedNodeIds.includes(id))
     if (sameNodes && currentEdgeSelection === selectedEdgeId) return
 
-    console.log("sync:push", JSON.stringify({ refsN: currentNodeSelection, refsE: currentEdgeSelection, storeN: selectedNodeIds, storeE: selectedEdgeId }))
     const api = reactFlowStore.getState()
     if (selectedNodeIds.length > 0) api.addSelectedNodes(selectedNodeIds)
     else if (selectedEdgeId) api.addSelectedEdges([selectedEdgeId])
@@ -814,13 +1028,59 @@ function FlowchartCanvas() {
   }, [reactFlowStore, selectedNodeIds, selectedEdgeId, canvasState.source])
 
   useEffect(() => {
-    if (!nodesInitialized || initialFitComplete.current) return
+    if (initialFitComplete.current) return
     initialFitComplete.current = true
-    const frame = window.requestAnimationFrame(() => {
-      void fitView({ padding: 0.18, duration: 0 })
+    const timer = window.setTimeout(() => {
+      void fitEditorView(0)
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [fitEditorView])
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const observer = new ResizeObserver(([entry]) => {
+      if (!entry) return
+      const nextSize = {
+        width: entry.contentRect.width,
+        height: entry.contentRect.height,
+      }
+      const previousSize = canvasSizeRef.current
+      canvasSizeRef.current = nextSize
+      if (!previousSize) {
+        window.cancelAnimationFrame(resizeFitFrameRef.current)
+        resizeFitFrameRef.current = window.requestAnimationFrame(() => {
+          void fitEditorView(0)
+        })
+        return
+      }
+
+      const contracted =
+        nextSize.width < previousSize.width - 32 ||
+        nextSize.height < previousSize.height - 32
+      if (!contracted) return
+
+      window.cancelAnimationFrame(resizeFitFrameRef.current)
+      resizeFitFrameRef.current = window.requestAnimationFrame(() => {
+        void fitEditorView(0)
+      })
     })
-    return () => window.cancelAnimationFrame(frame)
-  }, [fitView, nodesInitialized])
+
+    observer.observe(canvas)
+    return () => {
+      observer.disconnect()
+      window.cancelAnimationFrame(resizeFitFrameRef.current)
+    }
+  }, [fitEditorView])
+
+  useEffect(() => {
+    if (!shouldRefitEditor(announcement)) return
+    const timer = window.setTimeout(() => {
+      void fitEditorView(250)
+    }, 250)
+    return () => window.clearTimeout(timer)
+  }, [adapted, announcement, fitEditorView])
 
   const commitCanvas = useCallback(
     (
@@ -844,22 +1104,92 @@ function FlowchartCanvas() {
 
   const onNodesChange = useCallback(
     (changes: NodeChange<FlowchartReactNode>[]) => {
-      const supportedChanges = changes.filter(
-        (change) =>
-          change.type === "position" ||
-          change.type === "select" ||
-          change.type === "dimensions"
-      )
+      for (const change of changes) {
+        if (change.type === "position" && change.dragging === true) {
+          draggingNodeIdsRef.current.add(change.id)
+        }
+      }
+
+      const supportedChanges = changes.filter((change) => {
+        if (change.type === "select" || change.type === "dimensions") return true
+        if (change.type !== "position") return false
+        if (change.dragging === true) return true
+        if (change.dragging === false) {
+          return draggingNodeIdsRef.current.has(change.id)
+        }
+        return !ignoreProgrammaticPositionsRef.current
+      })
       if (supportedChanges.length === 0) return
-      console.log("sync:nodesChange", JSON.stringify(supportedChanges.filter((c) => c.type === "select")))
-      const nextNodes = applyNodeChanges(supportedChanges, nodesRef.current)
+      const previousNodes = nodesRef.current
+      let nextNodes = applyNodeChanges(supportedChanges, previousNodes)
+      const movedIds = new Set(
+        supportedChanges.flatMap((change) =>
+          change.type === "position" && change.position ? [change.id] : []
+        )
+      )
+      for (const change of supportedChanges) {
+        if (change.type !== "position" || !change.position) continue
+        const before = previousNodes.find((node) => node.id === change.id)
+        const after = nextNodes.find((node) => node.id === change.id)
+        if (!before || !after || after.data.node.type !== "group") continue
+        const dx = after.position.x - before.position.x
+        const dy = after.position.y - before.position.y
+        if (dx === 0 && dy === 0) continue
+        const descendantSet = new Set<string>()
+        const collect = (parentId: string) => {
+          for (const node of nextNodes) {
+            if (node.data.node.parentId === parentId && !descendantSet.has(node.id)) {
+              descendantSet.add(node.id)
+              collect(node.id)
+            }
+          }
+        }
+        collect(change.id)
+        nextNodes = nextNodes.map((node) => {
+          if (movedIds.has(node.id) || !descendantSet.has(node.id)) {
+            return node
+          }
+          return {
+            ...node,
+            position: { x: node.position.x + dx, y: node.position.y + dy },
+          }
+        })
+      }
+      if (reactNodesEquivalent(nodesRef.current, nextNodes)) {
+        nodesRef.current = nextNodes
+        return
+      }
       nodesRef.current = nextNodes
       setCanvasState((current) => ({ ...current, nodes: nextNodes }))
-      const positionEnded = supportedChanges.some(
-        (change) => change.type === "position" && change.dragging !== true
+      const dragEnded = supportedChanges.some(
+        (change) =>
+          change.type === "position" &&
+          change.dragging === false &&
+          draggingNodeIdsRef.current.has(change.id)
       )
-      if (positionEnded) {
+      const midDrag = supportedChanges.some(
+        (change) => change.type === "position" && change.dragging === true
+      )
+      const keyboardMove =
+        !midDrag &&
+        !dragEnded &&
+        !ignoreProgrammaticPositionsRef.current &&
+        supportedChanges.some(
+          (change) => change.type === "position" && change.dragging === undefined
+        )
+      if (dragEnded) {
+        for (const change of supportedChanges) {
+          if (change.type === "position" && change.dragging === false) {
+            draggingNodeIdsRef.current.delete(change.id)
+          }
+        }
+        window.clearTimeout(positionCommitTimerRef.current)
         commitCanvas("Node position updated", nextNodes, edgesRef.current)
+      } else if (keyboardMove) {
+        window.clearTimeout(positionCommitTimerRef.current)
+        positionCommitTimerRef.current = window.setTimeout(() => {
+          commitCanvas("Node position updated", nodesRef.current, edgesRef.current)
+        }, 200)
       }
     },
     [commitCanvas]
@@ -868,7 +1198,6 @@ function FlowchartCanvas() {
   const onEdgesChange = useCallback((changes: EdgeChange<FlowchartReactEdge>[]) => {
     const selectionChanges = changes.filter((change) => change.type === "select")
     if (selectionChanges.length === 0) return
-    console.log("sync:edgesChange", JSON.stringify(selectionChanges))
     const nextEdges = applyEdgeChanges(selectionChanges, edgesRef.current)
     edgesRef.current = nextEdges
     setCanvasState((current) => ({ ...current, edges: nextEdges }))
@@ -892,17 +1221,38 @@ function FlowchartCanvas() {
       } else if (command && event.key.toLowerCase() === "d") {
         event.preventDefault()
         duplicateSelection()
+      } else if (command && event.key.toLowerCase() === "c") {
+        const payload = copySelection()
+        if (payload) {
+          event.preventDefault()
+          void navigator.clipboard.writeText(JSON.stringify(payload))
+        }
+      } else if (command && event.key.toLowerCase() === "v") {
+        event.preventDefault()
+        void navigator.clipboard.readText().then((text) => {
+          try {
+            const parsed = JSON.parse(text) as FlowchartClipboard
+            if (parsed.kind === FLOWCHART_CLIPBOARD_KIND) {
+              pasteClipboard(parsed)
+            }
+          } catch {
+            // Ignore non-figure clipboard contents.
+          }
+        })
       } else if (event.key === "Delete" || event.key === "Backspace") {
         event.preventDefault()
         deleteSelection()
       }
     },
-    [deleteSelection, duplicateSelection, redo, undo]
+    [copySelection, deleteSelection, duplicateSelection, pasteClipboard, redo, undo]
   )
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeyboard)
-    return () => window.removeEventListener("keydown", handleKeyboard)
+    return () => {
+      window.removeEventListener("keydown", handleKeyboard)
+      window.clearTimeout(positionCommitTimerRef.current)
+    }
   }, [handleKeyboard])
 
   const saveEdgeLabel = () => {
@@ -913,23 +1263,39 @@ function FlowchartCanvas() {
     setEdgeLabelEditor(null)
   }
 
+  const canGroup = canGroupSelectedNodes(flowchart, selectedNodeIds)
+  const canUngroup = flowchart.nodes.some(
+    (node) =>
+      selectedNodeIds.includes(node.id) &&
+      (node.type === "group" || Boolean(node.parentId))
+  )
+  const hasSelection = selectedNodeIds.length > 0 || Boolean(selectedEdgeId)
+  const selectionLabel = selectedEdgeId
+    ? "Connection selected"
+    : selectedNodeIds.length === 1
+      ? "1 node selected"
+      : `${selectedNodeIds.length} nodes selected`
+  const documentStatus = `${editorSaveLabel(saveState, revision)} · ${flowchart.nodes.length} nodes · ${flowchart.edges.length} connections`
+
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <div className="flex h-full min-h-0 flex-col gap-3">
+      <div className="flex min-w-0 shrink-0 items-center justify-between gap-2">
         <div
-          className="flex flex-wrap items-center gap-1 rounded-full border border-border/70 bg-surface/80 p-1"
+          className="flex min-w-0 items-center gap-1 rounded-lg bg-muted p-1"
           role="toolbar"
-          aria-label="Flowchart editing"
+          aria-label="Document editing"
         >
-          <Button size="sm" className="h-8" onClick={() => addNode()}>
+          <Button
+            size="icon-xs"
+            aria-label="Add node"
+            title="Add node"
+            onClick={() => addNode()}
+          >
             <PlusIcon aria-hidden="true" />
-            Add node
           </Button>
-          <div className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
           <Button
             variant="ghost"
-            size="icon-sm"
-            className="size-8"
+            size="icon-xs"
             aria-label="Undo"
             title="Undo"
             disabled={past.length === 0}
@@ -939,8 +1305,7 @@ function FlowchartCanvas() {
           </Button>
           <Button
             variant="ghost"
-            size="icon-sm"
-            className="size-8"
+            size="icon-xs"
             aria-label="Redo"
             title="Redo"
             disabled={future.length === 0}
@@ -950,50 +1315,122 @@ function FlowchartCanvas() {
           </Button>
           <Button
             variant="ghost"
-            size="icon-sm"
-            className="size-8"
-            aria-label="Duplicate selected nodes"
-            title="Duplicate"
-            disabled={selectedNodeIds.length === 0}
-            onClick={duplicateSelection}
-          >
-            <CopyIcon aria-hidden="true" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="size-8"
-            aria-label="Delete selection"
-            title="Delete"
-            disabled={selectedNodeIds.length === 0 && !selectedEdgeId}
-            onClick={deleteSelection}
-          >
-            <Trash2Icon aria-hidden="true" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="size-8"
+            size="icon-xs"
             aria-label="Fit flowchart in view"
             title="Fit view"
-            onClick={() => void fitView({ padding: 0.18, duration: 250 })}
+            onClick={() => void fitEditorView(250)}
           >
             <Maximize2Icon aria-hidden="true" />
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                aria-label="More document actions"
+                title="More document actions"
+              >
+                <MoreHorizontalIcon aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuLabel>Layout</DropdownMenuLabel>
+              <DropdownMenuItem onSelect={() => applyAutoLayout("left-right")}>
+                <Layers3Icon aria-hidden="true" />
+                Left to right
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => applyAutoLayout("top-bottom")}>
+                <Layers3Icon aria-hidden="true" />
+                Top to bottom
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Appearance</DropdownMenuLabel>
+              <DropdownMenuItem onSelect={() => applyColorMode("color")}>
+                <PaletteIcon aria-hidden="true" />
+                Restore color
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => applyColorMode("grayscale")}>
+                <PaletteIcon aria-hidden="true" />
+                Convert to grayscale
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => scaleFonts(2)}>
+                <TypeIcon aria-hidden="true" />
+                Increase text size
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => scaleFonts(-2)}>
+                <TypeIcon aria-hidden="true" />
+                Decrease text size
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {railTrigger}
         </div>
-        <div className="flex items-center gap-1.5">
-          <Badge variant="outline" className="tabular-nums">
-            {flowchart.nodes.length} nodes · {flowchart.edges.length} edges
-          </Badge>
-          <Badge variant="secondary">Saved on this device</Badge>
-        </div>
+        <p className="hidden min-w-0 truncate text-caption text-hollow tabular-nums sm:block">
+          {documentStatus}
+        </p>
       </div>
 
       <div
         ref={canvasRef}
         data-flowchart-shortcuts
-        className="continuous-corners surface-outline relative h-[calc(100svh-15rem)] min-h-[32rem] overflow-hidden rounded-2xl bg-surface"
+        className={cn(
+          "relative min-h-0 flex-1 overflow-hidden bg-background",
+          flowchart.page.colorMode === "grayscale" && "grayscale"
+        )}
       >
+        {hasSelection ? (
+          <div
+            className="absolute start-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-1 rounded-lg bg-background p-1 shadow-regular-sm ring-1 ring-border"
+            role="toolbar"
+            aria-label={`${selectionLabel} actions`}
+          >
+            <span className="hidden whitespace-nowrap px-2 text-caption text-hollow sm:inline">
+              {selectionLabel}
+            </span>
+            {selectedNodeIds.length > 0 ? (
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                aria-label="Duplicate selected nodes"
+                title="Duplicate"
+                onClick={duplicateSelection}
+              >
+                <CopyIcon aria-hidden="true" />
+              </Button>
+            ) : null}
+            {canGroup ? (
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                aria-label="Group selected nodes"
+                title="Group"
+                onClick={groupSelection}
+              >
+                <Layers3Icon aria-hidden="true" />
+              </Button>
+            ) : null}
+            {canUngroup ? (
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                aria-label="Ungroup selected nodes"
+                title="Ungroup"
+                onClick={ungroupSelection}
+              >
+                <Layers3Icon aria-hidden="true" />
+              </Button>
+            ) : null}
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              aria-label="Delete selection"
+              title="Delete"
+              onClick={deleteSelection}
+            >
+              <Trash2Icon aria-hidden="true" />
+            </Button>
+          </div>
+        ) : null}
         <ReactFlow<FlowchartReactNode, FlowchartReactEdge>
           nodes={nodes}
           edges={edges}
@@ -1023,7 +1460,6 @@ function FlowchartCanvas() {
             const nodesUnchanged =
               nodeIds.length === state.selectedNodeIds.length &&
               nodeIds.every((id) => state.selectedNodeIds.includes(id))
-            console.log("sync:mirror", JSON.stringify({ nodeIds, edgeId, storeN: state.selectedNodeIds, storeE: state.selectedEdgeId }))
             if (nodesUnchanged && edgeId === state.selectedEdgeId) return
             if (nodeIds.length > 0) selectNodes(nodeIds)
             else if (edgeId) selectEdge(edgeId)
@@ -1053,15 +1489,24 @@ function FlowchartCanvas() {
           minZoom={0.25}
           maxZoom={2}
           proOptions={reactFlowProOptions}
-          aria-label="Editable PCR workflow flowchart"
+          aria-label={`Editable ${flowchart.metadata.title} flowchart`}
         >
           <Background gap={20} size={1.5} color="var(--border)" />
           <Controls showInteractive={false} />
         </ReactFlow>
 
+        <p
+          className="absolute end-3 bottom-3 z-10 max-w-[calc(100%-5.5rem)] whitespace-nowrap rounded-md bg-background/90 px-2 py-1 text-caption text-hollow shadow-regular-xs tabular-nums backdrop-blur-sm sm:hidden"
+          aria-live="polite"
+          aria-label={documentStatus}
+          title={documentStatus}
+        >
+          {editorSaveLabel(saveState, revision)} · {flowchart.nodes.length} nodes
+        </p>
+
         {edgeLabelEditor && (
           <div
-            className="absolute z-20 w-44 -translate-x-1/2 -translate-y-1/2 rounded-xl bg-surface-raised p-2 shadow-overlay"
+            className="absolute z-20 w-44 -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-background p-2"
             style={{ left: edgeLabelEditor.left, top: edgeLabelEditor.top }}
           >
             <Label htmlFor="inline-edge-label" className="sr-only">
@@ -1085,8 +1530,9 @@ function FlowchartCanvas() {
           </div>
         )}
       </div>
-      <p className="text-caption text-muted-foreground">
-        Double-click labels to edit. Use Shift to multi-select, arrow keys to move, and Delete to remove.
+      <p className="sr-only">
+        Select a node, then open the inspector to edit its label and appearance. Use the object
+        list for keyboard navigation and multi-selection.
       </p>
       <div className="sr-only" aria-live="polite">
         {announcement}
@@ -1095,74 +1541,88 @@ function FlowchartCanvas() {
   )
 }
 
+function EditorRightRail() {
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <Tabs defaultValue="inspector" className="flex min-h-0 flex-1 flex-col gap-0">
+        <div className="px-3 pt-3">
+          <TabsList variant="line" className="w-full justify-start">
+            <TabsTrigger value="inspector">Inspector</TabsTrigger>
+            <TabsTrigger value="objects">Objects</TabsTrigger>
+            <TabsTrigger value="verify">Verify</TabsTrigger>
+            <TabsTrigger value="versions">Versions</TabsTrigger>
+          </TabsList>
+        </div>
+        <TabsContent value="inspector" className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
+          <FlowchartInspector />
+        </TabsContent>
+        <TabsContent value="objects" className="min-h-0 flex-1 overflow-hidden px-3 py-4">
+          <FlowchartObjectList />
+        </TabsContent>
+        <TabsContent value="verify" className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
+          <FlowchartReadinessPanel />
+        </TabsContent>
+        <TabsContent value="versions" className="flex flex-col gap-1 px-3 py-4">
+          <ProjectVersionsPanel />
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
+
 function FlowchartEditorInner() {
-  console.count("render:Inner")
-  const [objectsOpen, setObjectsOpen] = useState(false)
-  const [inspectorOpen, setInspectorOpen] = useState(false)
+  const [railOpen, setRailOpen] = useState(false)
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3 lg:hidden">
-        <Sheet open={objectsOpen} onOpenChange={setObjectsOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="sm">
-              Objects
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-[min(20rem,calc(100vw-1rem))] sm:max-w-none">
-            <SheetHeader>
-              <SheetTitle>Flowchart objects</SheetTitle>
-              <SheetDescription>A keyboard-accessible list of every node and connection.</SheetDescription>
-            </SheetHeader>
-            <div className="px-4 pb-4">
-              <FlowchartObjectList onObjectFocus={() => setObjectsOpen(false)} />
-            </div>
-          </SheetContent>
-        </Sheet>
-
-        <Sheet open={inspectorOpen} onOpenChange={setInspectorOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="sm">
-              Inspector
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-[min(22rem,calc(100vw-1rem))] sm:max-w-none">
-            <SheetHeader>
-              <SheetTitle>Inspector</SheetTitle>
-              <SheetDescription>Edit the selected object using explicit values.</SheetDescription>
-            </SheetHeader>
-            <ScrollArea className="h-128 px-4 pb-4">
-              <FlowchartInspector />
-            </ScrollArea>
-          </SheetContent>
-        </Sheet>
+    <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="min-h-0 flex-1 px-3 pt-2 md:px-4 md:pt-3">
+          <Sheet open={railOpen} onOpenChange={setRailOpen}>
+            <FlowchartCanvas
+              railTrigger={
+                <SheetTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    className="lg:hidden"
+                    aria-label="Open inspector"
+                    title="Inspector"
+                  >
+                    <Settings2Icon aria-hidden="true" />
+                  </Button>
+                </SheetTrigger>
+              }
+            />
+            <SheetContent
+              side="bottom"
+              className="max-h-[85svh] w-full rounded-t-2xl bg-sidebar p-0"
+            >
+              <SheetHeader>
+                <SheetTitle>Figure details</SheetTitle>
+                <SheetDescription>Inspector, objects, and versions.</SheetDescription>
+              </SheetHeader>
+              <div className="min-h-0 flex-1">
+                <EditorRightRail />
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
-
-      <div className="grid items-start gap-4 lg:grid-cols-[14rem_minmax(0,1fr)_17rem]">
-        <aside className="sticky top-[4.75rem] hidden lg:block">
-          <EditorPanel title="Objects" description="Every node and connection, in reading order.">
-            <FlowchartObjectList />
-          </EditorPanel>
-        </aside>
-        <main className="min-w-0">
-          <FlowchartCanvas />
-        </main>
-        <aside className="sticky top-[4.75rem] hidden lg:block">
-          <EditorPanel title="Inspector" description="Edit the selected node or connection.">
-            <ScrollArea className="max-h-[calc(100svh-11rem)] pe-1">
-              <FlowchartInspector />
-            </ScrollArea>
-          </EditorPanel>
-        </aside>
-      </div>
+      <aside className="hidden h-full w-80 shrink-0 border-s border-sidebar-border bg-sidebar lg:block">
+        <EditorRightRail />
+      </aside>
     </div>
   )
 }
 
 export function FlowchartEditorWorkbench() {
   return (
-    <ReactFlowProvider>
-      <FlowchartEditorInner />
-    </ReactFlowProvider>
+    <div className="flex min-h-0 flex-1">
+      <ReactFlowProvider>
+        <div className="flex min-h-0 min-w-0 flex-1">
+          <FlowchartEditorInner />
+        </div>
+      </ReactFlowProvider>
+    </div>
   )
 }

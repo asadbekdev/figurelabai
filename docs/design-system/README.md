@@ -4,6 +4,8 @@ Status: approved baseline for the first product build.
 
 This is the source of truth for UI decisions. Product screens may extend it only when the new pattern cannot be composed from an existing one. Reference research and adoption decisions are in [references.md](./references.md).
 
+The purchased Align UI 2.0 Figma file `ugwpIV7ePpHMxDrQKafr2i` is the visual authority. FigureLab implements it through repository-owned `components/align/` primitives as the only generic component boundary. Product scope comes from `docs/production-build-spec.md`: Release 1 is Flowchart-first, while Illustration, Plot, Vector Canvas, Templates, and related route designs are preview/later until their ordered milestones pass.
+
 ## Design thesis
 
 The product should feel like a calm scientific workspace with editorial clarity, not an AI generator dashboard.
@@ -40,9 +42,9 @@ The interface is:
 - direct, not clever;
 - trustworthy, not magical.
 
-The visual baseline is **Energy-style editorial restraint with ChatGPT-style circular controls**: airy technical space, a single blue emphasis color, real product UI as proof, and pill-shaped text buttons. Marketing may feel editorial; the workspace remains compact and utilitarian.
+The visual baseline is **Align UI 2.0**: Inter, blue primary (`#335CFF`), Gray neutrals, 10px controls, 16–20px cards, and named regular shadows. Product IA stays a two-pane scientific workbench. Meaning comes from hierarchy, space, and one primary action — not gradients or decoration.
 
-The product does not use gradients, glassmorphism, decorative blobs, glowing AI effects, emoji navigation, or constant animation as brand language.
+The product does not use graphite-only ChatGPT chrome, hairline-only elevation, system-font-only UI, glassmorphism, decorative blobs, glowing AI effects, emoji navigation, or constant animation as brand language.
 
 ## AI interaction policy
 
@@ -63,58 +65,43 @@ Beautiful UI is the reference for these interaction patterns. FigureLab reimplem
 The design-system stack is:
 
 - Tailwind CSS v4 for styling;
-- shadcn/ui `radix-nova` components with Radix primitives;
+- repository-owned Align UI components with Radix primitives for accessible behavior;
 - semantic CSS variables authored in OKLCH;
-- the ChatGPT-style native system sans stack for the full product and marketing interface;
-- Geist Mono through `next/font` for code, dimensions, IDs, and reproducible values;
-- Lucide for all interface icons;
+- Inter through `next/font` for the full product and marketing interface;
+- system mono for code, dimensions, IDs, and reproducible values;
+- Hugeicons Stroke Rounded for all interface icons (via `@/components/icons`); Align UI specifies Remix Icon, which remains a later pass;
 - Motion only for purposeful transitions;
 - assistant-ui primitives for thread/composer behavior;
 - React Flow for the first flowchart canvas.
 
-The repository currently already has Next.js 16.3.1, React 19, Tailwind v4, Geist Mono, Lucide, and Motion. No second styling system, display font, or icon set should be introduced.
+The repository currently already has Next.js 16.3.1, React 19, Tailwind v4, Inter, Hugeicons, and Motion. No second styling system, display font, or icon set should be introduced.
 
 ## Color system
 
 ### Color policy
 
-- Neutral is the brand foundation.
-- The filled primary action is neutral black in the product workspace; marketing may use the brand-blue CTA.
-- Blue means link, focus, active selection, or interactive emphasis. It is not decorative.
-- Green means success or improvement.
-- Amber means warning or pending attention.
-- Red means destructive action or failure.
-- Figure and plot colors belong to the document, not the application chrome.
+- Align Gray neutrals are the default chrome language; blue is the filled primary.
+- The filled primary action is Align blue with white text.
+- Hover is `bg-weak-50`. Selection may use `primary-alpha-10`.
+- Status in chrome may use Align success / warning / error tokens, paired with icon and label.
+- Figure and plot colors belong to the document (`lib/flowchart/palette.ts`), not the application chrome.
 - Meaning never depends on color alone.
 
 ### Light tokens
 
 ```css
 :root {
-  --background: oklch(0.985 0.002 247.839);
-  --foreground: oklch(0.205 0.006 285.885);
-
-  --surface: oklch(0.998 0 0);
-  --surface-subtle: oklch(0.967 0.003 264.542);
-  --surface-raised: oklch(1 0 0);
-
-  --muted: oklch(0.956 0.003 264.542);
-  --muted-foreground: oklch(0.43 0.015 285.8);
-  --border: oklch(0.912 0.006 264.531);
-  --input: oklch(0.922 0.006 264.531);
-
-  --primary: oklch(0.205 0.006 285.885);
-  --primary-foreground: oklch(0.985 0.002 247.839);
-
-  --brand: oklch(0.5 0.2 260);
-  --brand-foreground: oklch(0.985 0.002 247.839);
-  --accent: oklch(0.95 0.03 255);
-  --accent-foreground: oklch(0.35 0.12 260);
-  --ring: oklch(0.5 0.2 260);
-
-  --success: oklch(0.5 0.13 150);
-  --warning: oklch(0.55 0.14 70);
-  --destructive: oklch(0.5 0.19 25);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.159 0 0);
+  --sidebar: oklch(0.982 0 0);
+  --muted: oklch(0.982 0 0);
+  --muted-foreground: oklch(0.478 0 0);
+  --border: oklch(0 0 0 / 0.102);
+  --primary: oklch(0.159 0 0);
+  --primary-foreground: oklch(1 0 0);
+  --accent: oklch(0 0 0 / 0.051);
+  --ring: oklch(0.159 0 0);
+  --overlay: oklch(0 0 0 / 0.502);
 }
 ```
 
@@ -122,30 +109,17 @@ The repository currently already has Next.js 16.3.1, React 19, Tailwind v4, Geis
 
 ```css
 .dark {
-  --background: oklch(0.145 0.004 285.823);
-  --foreground: oklch(0.922 0.004 286.32);
-
-  --surface: oklch(0.205 0.006 285.885);
-  --surface-subtle: oklch(0.235 0.006 285.9);
-  --surface-raised: oklch(0.269 0.006 286.033);
-
-  --muted: oklch(0.269 0.006 286.033);
-  --muted-foreground: oklch(0.72 0.01 286);
-  --border: oklch(0.3 0.007 286);
-  --input: oklch(0.3 0.007 286);
-
-  --primary: oklch(0.922 0.004 286.32);
-  --primary-foreground: oklch(0.205 0.006 285.885);
-
-  --brand: oklch(0.72 0.14 255);
-  --brand-foreground: oklch(0.145 0.004 285.823);
-  --accent: oklch(0.27 0.06 255);
-  --accent-foreground: oklch(0.9 0.03 255);
-  --ring: oklch(0.72 0.14 255);
-
-  --success: oklch(0.7 0.13 150);
-  --warning: oklch(0.78 0.12 80);
-  --destructive: oklch(0.7 0.15 25);
+  --background: oklch(0.178 0 0);
+  --foreground: oklch(0.96 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --muted: oklch(0.205 0 0);
+  --muted-foreground: oklch(0.72 0 0);
+  --border: oklch(1 0 0 / 0.1);
+  --primary: oklch(0.96 0 0);
+  --primary-foreground: oklch(0.178 0 0);
+  --accent: oklch(1 0 0 / 0.05);
+  --ring: oklch(0.96 0 0);
+  --overlay: oklch(0 0 0 / 0.502);
 }
 ```
 
@@ -155,14 +129,10 @@ The proposed core pairs were converted to linear sRGB and checked with the WCAG 
 
 | Pair | Ratio |
 | --- | ---: |
-| Light foreground / background | 17.17:1 |
-| Light muted foreground / background | 7.79:1 |
-| Light brand link / background | 5.98:1 |
-| Dark foreground / background | 15.71:1 |
-| Dark muted foreground / background | 7.97:1 |
-| Dark brand link / background | 7.97:1 |
-| Light destructive text / background | 6.35:1 |
-| Dark destructive text / background | 6.94:1 |
+| Light graphite ink / paper | 18.1:1 |
+| Light mid-ash / paper | 7.0:1 |
+| Dark light-ink / dark canvas | 15.8:1 |
+| Dark mid-ash / dark canvas | 7.5:1 |
 
 All exceed WCAG AA for normal text. Component-level contrast still must be checked against the actual rendered background and state.
 
@@ -182,28 +152,30 @@ Large fills use low chroma/opacity; lines and marks carry the stronger color. Ax
 
 ### Typeface
 
-- Interface, prose, and display: the native system sans stack used by ChatGPT.
-- Code, dimensions, task IDs, and reproducible snippets: Geist Mono.
+- Interface, prose, and display: Inter (Align UI).
+- Code, dimensions, task IDs, and reproducible snippets: the governed system-mono stack.
 - No secondary brand or editorial font.
-- The system stack needs no font download; keep Geist Mono self-hosted as `.woff2` through `next/font` and keep root antialiasing enabled.
+- Load Inter once through `next/font`; keep the mono role on the system-mono stack and keep root antialiasing enabled.
 
 ### Weights
 
 - 400: body, descriptions, chat, inputs.
-- 500: buttons, labels, navigation, table headers, page titles, and section titles.
-- Do not use 600+ in the product UI.
+- 500: buttons, labels, navigation, and table headers.
+- 500: Align titles (title-h5 / title-h6) and labels.
+- 600: optional single page title only.
+- Do not use 300 or 700+ in the product UI.
 
 ### Type scale
 
 | Token | Size / line height | Use |
 | --- | --- | --- |
-| `text-caption` | 12 / 16 | nonessential timestamps and metadata |
-| `text-meta` | 13 / 18 | secondary editor values and hints |
-| `text-ui` | 14 / 20 | buttons, menus, tabs, inspector labels |
-| `text-body` | 16 / 24 | conversation, descriptions, mobile inputs |
-| `text-title-sm` | 18 / 24 | pane and modal titles |
-| `text-title` | 24 / 30 | page title and empty-state question |
-| `text-display` | 32 / 38 | marketing or onboarding only |
+| `text-caption` | 14 / 1.43 | timestamps, metadata, and hints |
+| `text-meta` | 14 / 1.43 | secondary editor values |
+| `text-ui` | 14 / 1.43 | buttons, menus, tabs, inspector labels |
+| `text-body` | 16 / 1.5 | conversation, descriptions, mobile inputs |
+| `text-title-sm` | 16 / 1.5 | pane labels that are not the page heading |
+| `text-title` | 24 / 1.25 / 600 | page title and empty-state question |
+| `text-display` | 24 / 1.25 / 600 | welcome heading only |
 
 Rules:
 
@@ -277,10 +249,11 @@ The system uses one radius family with a small number of roles. This preserves c
 | `radius-xs` | 4 px | small selection markers |
 | `radius-sm` | 6 px | compact tags and code fragments |
 | `radius-md` | 8 px | menu items and compact fields |
-| `radius-lg` | 12 px | controls, inspector groups, and small previews |
-| `radius-xl` | 16 px | bounded surfaces, dialogs, and media |
-| `radius-composer` | 28 px | main conversational composer only |
-| `radius-round` | 999 px | text buttons, icon buttons, avatars, and circular controls |
+| `radius-lg` | 10 px | buttons, cards, nav, composer, dialogs |
+| `radius-xl` | 10 px | bounded surfaces and media |
+| `radius-2xl` | 16 px | links |
+| `radius-composer` | 10 px | main conversational composer |
+| `radius-round` | 9999 px | account / login CTA only |
 
 Nested radii must be concentric: outer radius equals inner radius plus padding. Do not put 12 px children inside a 12 px parent.
 
@@ -295,18 +268,16 @@ Supported browsers may progressively enhance bounded surfaces with `corner-shape
 
 ### Shadows
 
-- no shadow on ordinary app panes;
-- `shadow-surface` for a bounded raised object;
-- `shadow-surface-hover` for its hover elevation;
-- `shadow-overlay` for popovers, menus, sheets, and modal dialogs;
-- no colored glow.
+- Align regular / input / overlay shadows on cards, menus, dialogs, and the composer;
+- tooltip uses strong fill plus `shadow-tooltip`;
+- no raw Tailwind `shadow-lg` / `shadow-2xl` and no colored glow.
 
 ## Icons
 
-- Lucide only.
+- Hugeicons Stroke Rounded only, imported from `@/components/icons`.
 - Standard icon size: 16 px inside compact UI, 18 px in normal buttons, 20 px for standalone toolbar controls.
-- Default stroke: 1.5 px beside regular text; 2 px beside semibold text.
-- Outline is default; fill marks the active tool only where the icon supports it cleanly.
+- Default optical weight is a 1.5 stroke with round caps and joins. Do not use Fill, Solid, Sharp, or chromatic icons.
+- Stroke Rounded is default; fill marks the active tool only where the icon supports it cleanly.
 - Icons inherit `currentColor`.
 - Icon-only actions require an accessible label and tooltip.
 - Prefer visible labels for unfamiliar scientific or export actions.
@@ -321,7 +292,7 @@ Supported browsers may progressively enhance bounded surfaces with `corner-shape
 - **Destructive:** red only for genuinely destructive actions.
 - **Link:** inline navigation or documentation.
 
-Text buttons use pill silhouettes (`radius-round`); icon-only buttons are true circles. Joined button groups may keep connected inner edges so they read as one control. Fields, cards, menus, and panes do not become pills merely to match the buttons.
+Text buttons use 10px corners. The account / login CTA is the only pill: white fill plus a hairline border. Icon-only buttons share the 10px control radius. Joined button groups may keep connected inner edges so they read as one control.
 
 Desktop controls target 40 × 40 px when space permits; compact toolbar controls may visually use 32–36 px while preserving at least a 24 × 24 px non-overlapping hit target. Touch targets aim for 44 × 44 px.
 
@@ -515,7 +486,7 @@ No component is complete until default, hover, focus, active, disabled, loading,
 
 ## Implementation order
 
-1. Initialize shadcn with the approved preset choices.
+1. Establish repository-owned Align primitives backed by accessible headless behavior.
 2. Replace the starter global colors with these semantic tokens.
 3. Map the type, spacing, radius, and motion tokens into Tailwind v4.
 4. Build and visually test primitive states in isolation.

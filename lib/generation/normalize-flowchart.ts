@@ -5,9 +5,9 @@ import {
   type FlowchartEdgeType,
   type FlowchartNode,
   type FlowchartNodeType,
-} from "@/lib/flowchart/schema"
+} from "../flowchart/schema"
 
-import type { FigureDirection, FigurePlan } from "./contracts"
+import type { FigurePlan } from "./contracts"
 import { layoutFlowchartDocument, positionsNeedRelayout } from "./layout"
 
 const NODE_TYPES = new Set<FlowchartNodeType>([
@@ -64,6 +64,15 @@ function asBoolean(value: unknown, fallback: boolean): boolean {
   return typeof value === "boolean" ? value : fallback
 }
 
+function asOptionalData(value: unknown): Record<string, unknown> | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined
+  try {
+    return JSON.parse(JSON.stringify(value)) as Record<string, unknown>
+  } catch {
+    return undefined
+  }
+}
+
 function safeId(value: unknown, fallback: string): string {
   const raw = asString(value, fallback)
     .toLowerCase()
@@ -105,6 +114,7 @@ function normalizeNode(raw: unknown, index: number, usedIds: Set<string>): Flowc
   const style = asRecord(record.style)
   const position = asRecord(record.position)
   const size = asRecord(record.size)
+  const data = asOptionalData(record.data)
 
   return {
     id,
@@ -131,6 +141,7 @@ function normalizeNode(raw: unknown, index: number, usedIds: Set<string>): Flowc
     },
     ...(typeof record.parentId === "string" ? { parentId: safeId(record.parentId, "") || undefined } : {}),
     ...(typeof record.locked === "boolean" ? { locked: record.locked } : {}),
+    ...(data ? { data } : {}),
   }
 }
 
@@ -155,11 +166,15 @@ function normalizeEdge(
   const type = EDGE_TYPES.has(record.type as FlowchartEdgeType)
     ? (record.type as FlowchartEdgeType)
     : "smoothstep"
+  const sourceHandle = asString(record.sourceHandle).trim().slice(0, 80)
+  const targetHandle = asString(record.targetHandle).trim().slice(0, 80)
 
   return {
     id,
     sourceNodeId,
     targetNodeId,
+    ...(sourceHandle ? { sourceHandle } : {}),
+    ...(targetHandle ? { targetHandle } : {}),
     type,
     ...(asString(record.label).trim()
       ? { label: asString(record.label).trim().slice(0, 500) }
@@ -214,6 +229,9 @@ export function normalizeFlowchartDocument(
       height: Math.min(20_000, Math.max(240, asNumber(page.height, 720))),
       background: safeColor(page.background, "#ffffff"),
       padding: Math.min(1_000, Math.max(0, asNumber(page.padding, 64))),
+      ...(page.colorMode === "color" || page.colorMode === "grayscale"
+        ? { colorMode: page.colorMode }
+        : {}),
     },
     viewport: {
       x: asNumber(viewport.x, 0),

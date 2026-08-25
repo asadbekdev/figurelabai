@@ -60,4 +60,24 @@ describe("renderFlowchartSvg", () => {
     expect(png.byteLength).toBeGreaterThan(10_000)
     expect(stats.channels.some((channel) => channel.stdev > 0)).toBe(true)
   })
+
+  it("rasterizes to a non-blank JPG at the requested dimensions", async () => {
+    const svg = renderFlowchartSvg(demoFlowchartDocument, {
+      background: "document",
+    })
+    const image = sharp(Buffer.from(svg)).resize({
+      width: demoFlowchartDocument.page.width * 2,
+      height: demoFlowchartDocument.page.height * 2,
+      fit: "fill",
+    })
+    const jpg = await image.jpeg({ quality: 92 }).toBuffer()
+    const metadata = await sharp(jpg).metadata()
+    const stats = await sharp(jpg).stats()
+
+    expect(metadata.format).toBe("jpeg")
+    expect(metadata.width).toBe(2240)
+    expect(metadata.height).toBe(1440)
+    expect(jpg.byteLength).toBeGreaterThan(8_000)
+    expect(stats.channels.some((channel) => channel.stdev > 0)).toBe(true)
+  })
 })

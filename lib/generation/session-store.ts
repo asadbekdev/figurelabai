@@ -25,6 +25,7 @@ type GenerationSessionState = {
   appendChat: (message: SessionChatMessage) => void
   addImage: (image: Omit<SessionGeneratedImage, "id" | "createdAt">) => SessionGeneratedImage
   setLastPlan: (plan: FigurePlan | null) => void
+  resetSession: () => void
 }
 
 function nextId(prefix: string): string {
@@ -48,4 +49,5 @@ export const useGenerationSessionStore = create<GenerationSessionState>((set) =>
     return next
   },
   setLastPlan: (plan) => set({ lastPlan: plan }),
+  resetSession: () => set({ chatMessages: [], images: [], lastPlan: null }),
 }))

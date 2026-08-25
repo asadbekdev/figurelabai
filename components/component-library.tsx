@@ -4,8 +4,6 @@ import { useState } from "react"
 import {
   AlertTriangleIcon,
   BellIcon,
-  CommandIcon,
-  DownloadIcon,
   FileTextIcon,
   FolderIcon,
   InfoIcon,
@@ -17,7 +15,7 @@ import {
   Share2Icon,
   SparklesIcon,
   Trash2Icon,
-} from "lucide-react"
+} from "@/components/icons"
 import { toast } from "sonner"
 
 import {
@@ -39,8 +37,8 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+} from "@/components/align/accordion"
+import { Alert, AlertDescription, AlertTitle } from "@/components/align/alert"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,11 +49,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
+} from "@/components/align/alert-dialog"
+import { Avatar, AvatarFallback } from "@/components/align/avatar"
+import { Badge } from "@/components/align/badge"
+import { Button } from "@/components/align/button"
+import { Checkbox } from "@/components/align/checkbox"
 import {
   Command,
   CommandDialog,
@@ -64,8 +62,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandShortcut,
-} from "@/components/ui/command"
+} from "@/components/align/command"
 import {
   Dialog,
   DialogContent,
@@ -74,7 +71,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/components/align/dialog"
 import {
   Drawer,
   DrawerClose,
@@ -84,7 +81,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from "@/components/ui/drawer"
+} from "@/components/align/drawer"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -92,7 +89,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/align/dropdown-menu"
 import {
   Empty,
   EmptyContent,
@@ -100,7 +97,7 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty"
+} from "@/components/align/empty"
 import {
   Field,
   FieldDescription,
@@ -109,31 +106,31 @@ import {
   FieldLabel,
   FieldLegend,
   FieldSet,
-} from "@/components/ui/field"
+} from "@/components/align/field"
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
-} from "@/components/ui/hover-card"
-import { Input } from "@/components/ui/input"
+} from "@/components/align/hover-card"
+import { Input } from "@/components/align/input"
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
-} from "@/components/ui/input-group"
-import { Kbd } from "@/components/ui/kbd"
-import { Label } from "@/components/ui/label"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Progress } from "@/components/ui/progress"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+} from "@/components/align/input-group"
+import { Kbd } from "@/components/align/kbd"
+import { Label } from "@/components/align/label"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/align/popover"
+import { Progress } from "@/components/align/progress"
+import { RadioGroup, RadioGroupItem } from "@/components/align/radio-group"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
+} from "@/components/align/select"
+import { Separator } from "@/components/align/divider"
 import {
   Sheet,
   SheetContent,
@@ -141,11 +138,11 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Slider } from "@/components/ui/slider"
-import { Spinner } from "@/components/ui/spinner"
-import { Switch } from "@/components/ui/switch"
+} from "@/components/align/sheet"
+import { Skeleton } from "@/components/align/skeleton"
+import { Slider } from "@/components/align/slider"
+import { Spinner } from "@/components/align/spinner"
+import { Switch } from "@/components/align/switch"
 import {
   Table,
   TableBody,
@@ -153,11 +150,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Textarea } from "@/components/ui/textarea"
-import { Toggle } from "@/components/ui/toggle"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+} from "@/components/align/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/align/tabs"
+import { Textarea } from "@/components/align/textarea"
+import { Toggle } from "@/components/align/toggle"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/align/tooltip"
 import { cn } from "@/lib/utils"
 
 const sections = [
@@ -194,7 +191,7 @@ function Specimen({ title, description, children, className }: {
   className?: string
 }) {
   return (
-    <div className={cn("continuous-corners space-y-4 rounded-2xl bg-surface p-4 surface-outline sm:p-5", className)}>
+    <div className={cn("space-y-4 rounded-lg border border-border bg-background p-4 sm:p-5", className)}>
       <div>
         <h3 className="text-ui font-medium">{title}</h3>
         {description && <p className="mt-1 text-meta text-muted-foreground">{description}</p>}
@@ -207,7 +204,7 @@ function Specimen({ title, description, children, className }: {
 function ColorToken({ name, value, className }: { name: string; value: string; className: string }) {
   return (
     <div className="min-w-0">
-      <div className={cn("h-20 rounded-xl surface-outline", className)} />
+      <div className={cn("h-20 rounded-lg border border-border", className)} />
       <p className="mt-2 truncate text-ui font-medium">{name}</p>
       <p className="truncate font-mono text-caption text-muted-foreground">{value}</p>
     </div>
@@ -223,7 +220,7 @@ export function ComponentLibrary() {
         Skip to content
       </a>
 
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
+      <header className="sticky top-0 z-40 border-b bg-background">
         <div className="mx-auto flex h-16 max-w-[90rem] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
@@ -231,7 +228,7 @@ export function ComponentLibrary() {
             </span>
             <div className="min-w-0">
               <p className="truncate text-ui font-medium">FigureLab components</p>
-              <p className="truncate text-caption text-muted-foreground">Calm precision · v0.1</p>
+              <p className="truncate text-caption text-muted-foreground">Align UI 2.0 · v0.3</p>
             </div>
           </div>
           <div className="flex items-center gap-1">
@@ -262,8 +259,8 @@ export function ComponentLibrary() {
             <header className="max-w-3xl space-y-5">
               <Badge variant="secondary">Approved baseline</Badge>
               <div className="space-y-3">
-                <h1 className="text-5xl font-medium tracking-[-0.04em] text-balance sm:text-6xl">A complete interface language for <span className="text-brand">scientific creation.</span></h1>
-                <p className="max-w-2xl text-lg leading-relaxed text-muted-foreground text-pretty">Accessible primitives, artifact-first patterns, and explicit system states—built to make complex figure work feel calm.</p>
+                <h1 className="text-title text-balance">A complete interface language for scientific creation.</h1>
+                <p className="max-w-2xl text-body text-muted-foreground text-pretty">Accessible primitives, artifact-first patterns, and explicit system states—Align UI tokens on the FigureLab workbench, built so figures stay in front.</p>
               </div>
               <div className="flex flex-wrap gap-3">
                 <Button onClick={() => document.getElementById("product")?.scrollIntoView()}>View product patterns</Button>
@@ -271,35 +268,35 @@ export function ComponentLibrary() {
               </div>
             </header>
 
-            <LibrarySection id="foundations" title="Foundations" description="Neutral application chrome keeps attention on figures. Blue is reserved for interactive emphasis; status colors keep one meaning.">
+            <LibrarySection id="foundations" title="Foundations" description="Align UI 2.0 tokens: Inter, blue primary, Gray neutrals, 10px controls, and regular shadows. Figures stay in front.">
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <ColorToken name="Background" value="--background" className="bg-background" />
-                <ColorToken name="Surface" value="--surface" className="bg-surface" />
+                <ColorToken name="Canvas" value="--background" className="bg-background" />
+                <ColorToken name="Sidebar" value="--sidebar" className="bg-sidebar" />
+                <ColorToken name="Strong text" value="--foreground" className="bg-foreground" />
+                <ColorToken name="Sub text" value="--muted-foreground" className="bg-muted-foreground" />
                 <ColorToken name="Primary" value="--primary" className="bg-primary" />
-                <ColorToken name="Brand" value="--brand" className="bg-brand" />
+                <ColorToken name="Stroke" value="--border" className="bg-border" />
                 <ColorToken name="Success" value="--success" className="bg-success" />
-                <ColorToken name="Warning" value="--warning" className="bg-warning" />
-                <ColorToken name="Destructive" value="--destructive" className="bg-destructive" />
-                <ColorToken name="Muted" value="--muted" className="bg-muted" />
+                <ColorToken name="Error" value="--destructive" className="bg-destructive" />
               </div>
               <div className="grid gap-4 xl:grid-cols-2">
-                <Specimen title="Typography" description="A ChatGPT-style native system stack with a role-based scale and restrained weights.">
+                <Specimen title="Typography" description="Inter. Title-h5 is 24/32/500. Body is 16/24/400. Labels are 14/20/500.">
                   <div className="space-y-4">
-                    <p className="text-3xl font-medium tracking-tight">Publication-ready figures</p>
-                    <p className="text-lg font-medium">Project and pane title</p>
+                    <p className="text-title">Publication-ready figures</p>
+                    <p className="text-body font-medium">Project and pane title</p>
                     <p className="text-body max-w-[65ch]">Body text stays comfortable for instructions, chat, and explanations that need sustained reading.</p>
-                    <p className="text-ui font-medium">Interface label · 14/20</p>
-                    <p className="text-meta text-muted-foreground">Metadata · 13/18 · Saved just now</p>
+                    <p className="text-ui">Interface label · 14/20</p>
+                    <p className="text-meta text-muted-foreground">Metadata · 14/20 · Saved just now</p>
                     <p className="font-mono text-caption">560 × 313 · task_4BC93</p>
                   </div>
                 </Specimen>
-                <Specimen title="Spacing and shape" description="A 4 px spacing base, structural borders, and concentric radii.">
+                <Specimen title="Spacing and shape" description="4px base. Controls are 10px. Cards and dialogs are 16–20px. The composer is a 20px card.">
                   <div className="flex items-end gap-3">
-                    {[4, 8, 12, 16, 24, 32].map((value) => (
-                      <div key={value} className="flex flex-col items-center gap-2"><div className="w-6 rounded-sm bg-brand" style={{ height: value }} /><span className="text-caption tabular-nums">{value}</span></div>
+                    {[4, 8, 12, 16, 20, 24].map((value) => (
+                      <div key={value} className="flex flex-col items-center gap-2"><div className="w-6 rounded-sm bg-foreground" style={{ height: value }} /><span className="text-caption tabular-nums">{value}</span></div>
                     ))}
                   </div>
-                  <div className="grid grid-cols-3 gap-3 text-center text-caption text-muted-foreground"><div><div className="h-20 rounded-lg bg-muted" /><span className="mt-2 block">Control · 12</span></div><div><div className="continuous-corners h-20 rounded-xl bg-muted" /><span className="mt-2 block">Surface · 16</span></div><div><div className="h-20 rounded-full bg-muted" /><span className="mt-2 block">Pill</span></div></div>
+                  <div className="grid grid-cols-3 gap-3 text-center text-caption text-muted-foreground"><div><div className="h-20 rounded-lg bg-muted" /><span className="mt-2 block">Control · 10</span></div><div><div className="h-20 rounded-xl border bg-background shadow-regular-xs" /><span className="mt-2 block">Card · 16</span></div><div><div className="h-20 rounded-2xl border bg-background shadow-regular-xs" /><span className="mt-2 block">Composer · 20</span></div></div>
                 </Specimen>
               </div>
             </LibrarySection>
@@ -338,7 +335,7 @@ export function ComponentLibrary() {
                 </Specimen>
                 <Specimen title="Selection controls">
                   <FieldGroup>
-                    <Field><FieldLabel htmlFor="model">Model</FieldLabel><Select defaultValue="nano"><SelectTrigger id="model" className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="nano">Nano Banana Pro</SelectItem><SelectItem value="gpt">GPT Image</SelectItem><SelectItem value="seedream">Seedream</SelectItem></SelectContent></Select></Field>
+                    <Field><FieldLabel htmlFor="model">Model</FieldLabel><Select defaultValue="nano"><SelectTrigger id="model" className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="nano">Nano Banana</SelectItem><SelectItem value="nano-pro">Nano Banana Pro</SelectItem><SelectItem value="nano-2">Nano Banana 2</SelectItem><SelectItem value="fixture">Fixture</SelectItem></SelectContent></Select></Field>
                     <FieldSet><FieldLegend variant="label">Output style</FieldLegend><RadioGroup defaultValue="flat" className="grid sm:grid-cols-3">{["Flat", "Line art", "Sketch"].map((label) => <Label key={label} className="flex items-center gap-2 rounded-lg border p-3"><RadioGroupItem value={label.toLowerCase().replace(" ", "-")} /> {label}</Label>)}</RadioGroup></FieldSet>
                     <Label className="flex items-center justify-between gap-4 rounded-lg border p-3"><span><span className="block text-ui font-medium">Show grid</span><span className="text-meta text-muted-foreground">Align objects while editing.</span></span><Switch defaultChecked /></Label>
                     <Label className="flex items-center gap-3"><Checkbox defaultChecked /> Include a transparent background</Label>
@@ -392,7 +389,7 @@ export function ComponentLibrary() {
 
             <LibrarySection id="product" title="Product patterns" description="Compound components turn the visual system into an opinionated scientific creation workflow, including visible AI activity and safe human approval.">
               <div className="space-y-8">
-                <Specimen title="Prompt composer" description="Mode, sources, resolved settings, cost, and submit remain in one calm surface."><div className="flex justify-center py-8"><PromptComposer /></div></Specimen>
+                <Specimen title="Prompt composer" description="A pill Ask-anything bar: plus on the left, circular send on the right."><div className="flex justify-center py-8"><PromptComposer /></div></Specimen>
                 <div className="grid gap-4 xl:grid-cols-2">
                   <Specimen title="Generation activity" description="Operational progress is inspectable without exposing private model reasoning."><GenerationActivity /></Specimen>
                   <Specimen title="Approval card" description="The generator pauses when a meaningful choice changes the artifact."><GenerationApproval /></Specimen>
@@ -411,8 +408,31 @@ export function ComponentLibrary() {
         </main>
       </div>
 
-      <CommandDialog open={commandOpen} onOpenChange={setCommandOpen}>
-        <Command><CommandInput placeholder="Search components and actions" /><CommandList><CommandEmpty>No matching components.</CommandEmpty><CommandGroup heading="Navigate">{sections.map(([id, label]) => <CommandItem key={id} onSelect={() => { setCommandOpen(false); document.getElementById(id)?.scrollIntoView() }}><FileTextIcon aria-hidden="true" /> {label}</CommandItem>)}</CommandGroup><CommandGroup heading="Actions"><CommandItem onSelect={() => toast.success("New project created")}><PlusIcon aria-hidden="true" /> Create project <CommandShortcut>⌘N</CommandShortcut></CommandItem><CommandItem><DownloadIcon aria-hidden="true" /> Export current figure <CommandShortcut>⌘E</CommandShortcut></CommandItem><CommandItem><CommandIcon aria-hidden="true" /> Open command menu <CommandShortcut>⌘K</CommandShortcut></CommandItem></CommandGroup></CommandList></Command>
+      <CommandDialog
+        open={commandOpen}
+        onOpenChange={setCommandOpen}
+        title="Component index"
+        description="Jump to a component section."
+      >
+        <Command>
+          <CommandInput placeholder="Search components" />
+          <CommandList>
+            <CommandEmpty>No matching components.</CommandEmpty>
+            <CommandGroup heading="Navigate">
+              {sections.map(([id, label]) => (
+                <CommandItem
+                  key={id}
+                  onSelect={() => {
+                    setCommandOpen(false)
+                    document.getElementById(id)?.scrollIntoView()
+                  }}
+                >
+                  <FileTextIcon aria-hidden="true" /> {label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
       </CommandDialog>
     </div>
   )

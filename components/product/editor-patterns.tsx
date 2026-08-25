@@ -13,16 +13,16 @@ import {
   ShapesIcon,
   TypeIcon,
   Undo2Icon,
-} from "lucide-react"
+} from "@/components/icons"
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
+import { Badge } from "@/components/align/badge"
+import { Button } from "@/components/align/button"
+import { Progress } from "@/components/align/progress"
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
+} from "@/components/align/tooltip"
 import { cn } from "@/lib/utils"
 
 export function CanvasToolbar() {
@@ -35,7 +35,7 @@ export function CanvasToolbar() {
   ] as const
 
   return (
-    <div className="flex w-fit items-center gap-1 rounded-xl bg-surface-raised p-1 surface-outline" role="toolbar" aria-label="Canvas tools">
+    <div className="flex w-fit items-center gap-1.5 rounded-lg border border-border bg-background p-1" role="toolbar" aria-label="Canvas tools">
       {tools.map(([label, Icon], index) => (
         <Tooltip key={label}>
           <TooltipTrigger asChild>
@@ -66,25 +66,31 @@ export function VersionItem({
   version,
   title,
   active = false,
+  timestamp = "2 min ago",
+  onSelect,
 }: {
   version: string
   title: string
   active?: boolean
+  timestamp?: string
+  onSelect?: () => void
 }) {
   return (
     <button
       type="button"
       aria-pressed={active}
+      aria-label={onSelect ? `Restore ${title}` : undefined}
+      onClick={onSelect}
       className={cn(
         "flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-start outline-none motion-safe:transition-[background-color,color,scale] motion-safe:duration-150 motion-safe:ease-out active:scale-[0.96] focus-visible:ring-3 focus-visible:ring-ring/50",
-        active ? "bg-accent text-accent-foreground" : "hover:bg-muted"
+        active ? "bg-muted font-semibold text-foreground" : "hover:bg-hover-veil"
       )}
     >
       <span className="mt-0.5 text-meta font-medium tabular-nums">{version}</span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-ui font-medium">{title}</span>
         <span className="mt-0.5 flex items-center gap-1 text-caption text-muted-foreground tabular-nums">
-          <Clock3Icon className="size-3" aria-hidden="true" /> 2 min ago
+          <Clock3Icon className="size-3" aria-hidden="true" /> {timestamp}
         </span>
       </span>
     </button>
@@ -103,7 +109,7 @@ export function ExportOption({
   return (
     <button
       type="button"
-      className="continuous-corners flex w-full items-center gap-3 rounded-xl bg-card p-3 text-start outline-none motion-safe:transition-[box-shadow,scale] motion-safe:duration-150 motion-safe:ease-out surface-outline surface-outline-hover active:scale-[0.96] focus-visible:ring-3 focus-visible:ring-ring/50"
+      className="flex w-full items-center gap-3 rounded-lg border border-border bg-card p-3 text-start outline-none motion-safe:transition-[background-color,scale] motion-safe:duration-150 motion-safe:ease-out hover:bg-hover-veil active:scale-[0.96] focus-visible:ring-3 focus-visible:ring-ring/50"
     >
       <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted">
         <DownloadIcon className="size-4" aria-hidden="true" />
@@ -134,16 +140,16 @@ export function ReadinessList() {
           <h3 id="readiness-title" className="text-ui font-medium">Publication readiness</h3>
           <p className="mt-0.5 text-meta text-muted-foreground tabular-nums">2 of 3 checks passed</p>
         </div>
-        <Badge variant="outline" className="text-warning">Needs review</Badge>
+        <Badge variant="outline">Needs review</Badge>
       </div>
       <Progress value={67} aria-label="Publication readiness: 2 of 3 checks passed" />
       <ul className="space-y-2">
         {checks.map((check) => (
           <li key={check.label} className="flex items-start gap-2 text-meta">
             {check.status === "pass" ? (
-              <CheckCircle2Icon className="mt-0.5 size-4 shrink-0 text-success" aria-hidden="true" />
+              <CheckCircle2Icon className="mt-0.5 size-4 shrink-0 text-foreground" aria-hidden="true" />
             ) : (
-              <CircleAlertIcon className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
+              <CircleAlertIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
             )}
             <span>{check.label}</span>
           </li>

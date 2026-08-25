@@ -1,5 +1,3 @@
-import { randomUUID } from "node:crypto"
-
 export type ApiSuccess<T> = {
   ok: true
   data: T
@@ -22,7 +20,7 @@ export type ApiError = {
 export type ApiResult<T> = ApiSuccess<T> | ApiError
 
 export function createRequestId(): string {
-  return randomUUID()
+  return crypto.randomUUID()
 }
 
 export function apiSuccess<T>(data: T, requestId = createRequestId()): Response {

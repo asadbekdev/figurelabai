@@ -5,14 +5,15 @@ import {
   CircleCheckIcon,
   DownloadIcon,
   FileImageIcon,
+  FileTextIcon,
   FileType2Icon,
   Loader2Icon,
   TriangleAlertIcon,
-} from "lucide-react"
+} from "@/components/icons"
 import { toast } from "sonner"
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/align/badge"
+import { Button } from "@/components/align/button"
 import {
   Dialog,
   DialogContent,
@@ -21,22 +22,28 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
+} from "@/components/align/dialog"
+import { Label } from "@/components/align/label"
+import { RadioGroup, RadioGroupItem } from "@/components/align/radio-group"
+import { ScrollArea } from "@/components/align/scroll-area"
+import { Separator } from "@/components/align/divider"
 import {
+  createFlowchartJpg,
   createFlowchartPng,
   createFlowchartSvg,
   downloadArtifact,
   exportFilename,
   validateFlowchartSvg,
 } from "@/lib/flowchart/export"
+import { createPublicationRecordPdf } from "@/lib/export/certificate"
+import { createFlowchartPdf } from "@/lib/export/pdf"
+import { createFlowchartPptx } from "@/lib/export/pptx"
 import { runFlowchartReadiness } from "@/lib/flowchart/readiness"
 import { useFlowchartEditorStore } from "@/lib/flowchart/store"
+import { useProjectSessionStore } from "@/lib/product/project-session"
+import { flushProjectSave } from "@/lib/product/use-project-persistence"
 
-type ExportFormat = "svg" | "png"
+type ExportFormat = "svg" | "png" | "jpg" | "pdf" | "pptx" | "json" | "certificate"
 type ExportBackground = "document" | "transparent"
 type ExportScale = 1 | 2 | 4
 
@@ -73,6 +80,7 @@ function FormatOption({
 }
 
 export function FlowchartExportDialog() {
+  const projectId = useProjectSessionStore((state) => state.projectId)
   const document = useFlowchartEditorStore((state) => state.document)
   const selectNodes = useFlowchartEditorStore((state) => state.selectNodes)
   const selectEdge = useFlowchartEditorStore((state) => state.selectEdge)
@@ -102,11 +110,31 @@ export function FlowchartExportDialog() {
   }
 
   const exportArtifact = async () => {
-    if (!report.ready) return
+    if (format !== "json" && format !== "certificate" && !report.ready) return
     setExporting(true)
 
     try {
-      if (format === "svg") {
+      await flushProjectSave()
+      if (useProjectSessionStore.getState().saveState === "conflict") {
+        throw new Error("Resolve the save conflict before exporting this revision.")
+      }
+
+      if (format === "certificate") {
+        const artifact = await createPublicationRecordPdf({
+          title: document.metadata.title,
+          projectId: projectId || "local-unsaved",
+          figureKind: "flowchart",
+        })
+        downloadArtifact(artifact, exportFilename(`${document.metadata.title}-publication-record`, "pdf"))
+      } else if (format === "json") {
+        const artifact = new Blob([JSON.stringify(document, null, 2)], {
+          type: "application/json;charset=utf-8",
+        })
+        downloadArtifact(artifact, exportFilename(document.metadata.title, "json"))
+      } else if (format === "pptx") {
+        const artifact = await createFlowchartPptx(document, { background, scale })
+        downloadArtifact(artifact, exportFilename(document.metadata.title, "pptx"))
+      } else if (format === "svg") {
         const svg = createFlowchartSvg(document, { background })
         validateFlowchartSvg(svg, document)
         const artifact = new Blob([svg], {
@@ -115,6 +143,21 @@ export function FlowchartExportDialog() {
         downloadArtifact(
           artifact,
           exportFilename(document.metadata.title, "svg")
+        )
+      } else if (format === "pdf") {
+        const artifact = await createFlowchartPdf(document, { background, scale })
+        downloadArtifact(
+          artifact,
+          exportFilename(document.metadata.title, "pdf")
+        )
+      } else if (format === "jpg") {
+        const artifact = await createFlowchartJpg(document, {
+          background,
+          scale,
+        })
+        downloadArtifact(
+          artifact,
+          exportFilename(document.metadata.title, "jpg")
         )
       } else {
         const artifact = await createFlowchartPng(document, {
@@ -127,13 +170,29 @@ export function FlowchartExportDialog() {
         )
       }
 
-      toast.success(`${format.toUpperCase()} export is ready`, {
+      toast.success(
+        format === "certificate"
+          ? "Local figure record downloaded"
+          : `${format === "json" ? "JSON" : format.toUpperCase()} export is ready`,
+        {
         description:
-          format === "svg"
-            ? "The verified vector artifact has been downloaded."
-            : `The verified ${document.page.width * scale} × ${
-                document.page.height * scale
-              } PNG has been downloaded.`,
+          format === "certificate"
+            ? "A dated local record of this figure — not a legal license or journal approval."
+            : format === "json"
+              ? "The editable flowchart source document has been downloaded."
+            : format === "svg"
+              ? "The verified vector artifact has been downloaded."
+            : format === "pdf"
+              ? `The verified PDF page (${document.page.width} × ${document.page.height}, artwork at ${scale}×) has been downloaded.`
+            : format === "pptx"
+              ? "One PowerPoint slide with the verified figure has been downloaded."
+              : format === "jpg"
+                ? `The verified ${document.page.width * scale} × ${
+                    document.page.height * scale
+                  } JPG has been downloaded.`
+              : `The verified ${document.page.width * scale} × ${
+                  document.page.height * scale
+                } PNG has been downloaded.`,
       })
     } catch (error) {
       toast.error("Export failed validation", {
@@ -150,13 +209,13 @@ export function FlowchartExportDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm">
+        <Button size="sm" aria-label="Export figure">
           <DownloadIcon aria-hidden="true" />
           Export
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[calc(100svh-2rem)] gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-2xl">
-        <DialogHeader className="border-b border-border/70 px-5 py-4">
+        <DialogHeader className="border-b border-border px-5 py-4">
           <DialogTitle>Export flowchart</DialogTitle>
           <DialogDescription>
             Run deterministic publication checks, then download the current local
@@ -195,7 +254,7 @@ export function FlowchartExportDialog() {
               {report.issues.length === 0 ? (
                 <div className="flex items-start gap-3 rounded-md bg-muted/50 p-3">
                   <CircleCheckIcon
-                    className="mt-0.5 size-4 shrink-0 text-success"
+                    className="mt-0.5 size-4 shrink-0 text-foreground"
                     aria-hidden="true"
                   />
                   <div>
@@ -218,8 +277,8 @@ export function FlowchartExportDialog() {
                       <TriangleAlertIcon
                         className={
                           item.severity === "error"
-                            ? "mt-0.5 size-4 shrink-0 text-destructive"
-                            : "mt-0.5 size-4 shrink-0 text-warning"
+                            ? "mt-0.5 size-4 shrink-0 text-foreground"
+                            : "mt-0.5 size-4 shrink-0 text-muted-foreground"
                         }
                         aria-hidden="true"
                       />
@@ -246,10 +305,10 @@ export function FlowchartExportDialog() {
                   Format
                 </h3>
                 <p className="text-caption text-muted-foreground">
-                  SVG remains editable. PNG uses the same verified scene.
+                  SVG remains editable. PNG, JPG, PDF, and PPTX use the same verified scene.
                 </p>
               </div>
-              <RadioGroup
+                <RadioGroup
                 value={format}
                 onValueChange={(value) => setFormat(value as ExportFormat)}
                 className="grid gap-3 sm:grid-cols-2"
@@ -267,6 +326,41 @@ export function FlowchartExportDialog() {
                   title="PNG image"
                   description="Publication-ready raster image."
                   icon={<FileImageIcon className="size-4" />}
+                />
+                <FormatOption
+                  id="export-jpg"
+                  value="jpg"
+                  title="JPG image"
+                  description="Compressed raster for slides and email."
+                  icon={<FileImageIcon className="size-4" />}
+                />
+                <FormatOption
+                  id="export-pdf"
+                  value="pdf"
+                  title="PDF document"
+                  description="Print-ready page for journals."
+                  icon={<FileTextIcon className="size-4" />}
+                />
+                <FormatOption
+                  id="export-pptx"
+                  value="pptx"
+                  title="PowerPoint slide"
+                  description="One slide with the figure, ready to drop into a deck."
+                  icon={<FileTextIcon className="size-4" />}
+                />
+                <FormatOption
+                  id="export-json"
+                  value="json"
+                  title="Source JSON"
+                  description="The editable document for backup or re-import."
+                  icon={<FileTextIcon className="size-4" />}
+                />
+                <FormatOption
+                  id="export-certificate"
+                  value="certificate"
+                  title="Local figure record"
+                  description="PDF with title, date, and local project id. Not a legal license."
+                  icon={<FileTextIcon className="size-4" />}
                 />
               </RadioGroup>
             </section>
@@ -309,7 +403,7 @@ export function FlowchartExportDialog() {
 
               <div className="space-y-2">
                 <Label id="dimensions-title">Output dimensions</Label>
-                {format === "png" ? (
+                {format !== "svg" && format !== "json" && format !== "certificate" ? (
                   <RadioGroup
                     aria-labelledby="dimensions-title"
                     value={String(scale)}
@@ -353,23 +447,25 @@ export function FlowchartExportDialog() {
         </ScrollArea>
 
         <DialogFooter className="mx-0 mb-0 rounded-none border-t bg-muted/50 px-5 py-4">
-          {!report.ready && (
-            <p className="self-center text-caption text-destructive sm:me-auto">
+          {!report.ready && format !== "json" && format !== "certificate" && (
+            <p className="self-center text-caption font-medium sm:me-auto">
               Resolve blocking issues before export.
             </p>
           )}
           <Button
-            disabled={!report.ready || exporting}
+            disabled={(format !== "json" && format !== "certificate" && !report.ready) || exporting}
             onClick={() => void exportArtifact()}
           >
             {exporting ? (
-              <Loader2Icon className="animate-spin" aria-hidden="true" />
+              <Loader2Icon className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
             ) : (
               <DownloadIcon aria-hidden="true" />
             )}
             {exporting
               ? "Validating…"
-              : `Download ${format.toUpperCase()}`}
+              : format === "certificate"
+                ? "Download record"
+                : `Download ${format === "json" ? "JSON" : format.toUpperCase()}`}
           </Button>
         </DialogFooter>
 

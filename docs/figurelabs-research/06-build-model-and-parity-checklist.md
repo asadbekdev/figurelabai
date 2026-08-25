@@ -101,6 +101,33 @@ Suggested records:
 - Sharing.
 - Teams and referrals.
 
+## Current offering table
+
+Product truth as of 2026-08-21. Auth, Stripe, landing, Refer & Earn, and teams stay out of scope. ChatGPT UI stays. The local workspace API is in.
+
+| Offering | FigureLabs | FigureLab now | Backend |
+|---|---|---|---|
+| Home default | Illustration | Illustration | — |
+| Text to Figure | Gemini / routed vendors | Yes | Gemini image or fixture |
+| Image to Figure | Yes | Yes | Gemini image or fixture |
+| Sketch to Figure | Yes | Yes | Gemini image or fixture |
+| Enhance Figure | Yes | Yes | Gemini image or fixture |
+| Add Ref Figure | Yes | Yes | Gemini image or fixture |
+| Generate figure image from flowchart | Published | Yes | Rasterize flowchart → Gemini/fixture |
+| Nano Banana | Gemini 2.5 Flash Image | Default | Live `gemini-2.5-flash-image` (1K) |
+| Nano Banana Pro | Gemini 3 Pro Image | Named option | Live `gemini-3-pro-image` (1K–4K) |
+| Nano Banana 2 | Gemini 3.1 Flash Image | Named option | Live `gemini-3.1-flash-image` (1K–4K) |
+| Fixture | Not a FigureLabs product | Yes | Local SVG demo |
+| Styles | Flat, 2.5D, 3D, Sketch, Line-Art, Hand-Drawn | Same plus Publication / Schematic / Soft | Prompt + fixture |
+| Journal palettes | 20+ presets | Nature, Cell, Science, Lancet, Graphite | Prompt colors; plot palettes match |
+| Size 1K / 2K / 4K | Yes | Yes | Gemini `imageSize` or SVG scale |
+| Size 8K | Paid upscale | Disabled, honest copy | Not available |
+| Export PNG / JPG / PDF / SVG / PPTX | Yes | Yes | Local raster/vector |
+| Plot journal style | Published | Nature / Cell / Science / Lancet palettes | Deterministic SVG |
+| Public API | Published `/v1/images` | Local `POST /api/v1/figures` | Same JobRunner / Gemini / fixture. No hosted keys or vendor billing. |
+| Teams / SSO | Paid | Out of scope | — |
+| Auth / Stripe / Refer & Earn | Yes | Out of scope | — |
+
 ## Observable parity checklist
 
 ### Shell

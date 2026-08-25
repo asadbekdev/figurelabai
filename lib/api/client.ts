@@ -22,14 +22,7 @@ export class ApiRequestError extends Error {
   }
 }
 
-export async function postJson<T>(url: string, body: unknown, signal?: AbortSignal): Promise<T> {
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-    signal,
-  })
-
+async function readJson<T>(response: Response): Promise<T> {
   let payload: ApiResult<T>
   try {
     payload = (await response.json()) as ApiResult<T>
@@ -50,4 +43,19 @@ export async function postJson<T>(url: string, body: unknown, signal?: AbortSign
   }
 
   return payload.data
+}
+
+export async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+  const response = await fetch(url, { method: "GET", signal })
+  return readJson<T>(response)
+}
+
+export async function postJson<T>(url: string, body: unknown = {}, signal?: AbortSignal): Promise<T> {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    signal,
+  })
+  return readJson<T>(response)
 }

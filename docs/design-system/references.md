@@ -8,9 +8,9 @@ This is a decision record, not a mood board. References are separated into what 
 
 ```mermaid
 flowchart LR
-  C[ChatGPT-style chat] -->|conversation rhythm| O[Our product]
-  D[DataFast] -->|density and hierarchy| O
-  S[shadcn/ui] -->|primitives and tokens| O
+  U[Align UI 2.0] -->|tokens type radius shadows| O[Our product]
+  C[Two-pane workbench] -->|product IA| O
+  S[Repository-owned Align components] -->|accessible primitives| O
   A[assistant-ui] -->|streaming chat states| O
   B[Beautiful UI] -->|AI interaction patterns| O
   R[React Flow] -->|flowchart canvas| O
@@ -18,6 +18,12 @@ flowchart LR
 ```
 
 ## Primary references
+
+### Align UI 2.0
+
+Reference: [Align UI](https://www.alignui.com/) and Figma file `ugwpIV7ePpHMxDrQKafr2i`.
+
+Decision: **adopt the purchased Align UI Figma file as the visual source of truth for tokens, type, radius, shadows, control anatomy, and assets.** Keep FigureLab product IA as a two-pane, Flowchart-first Release 1 shell. Implement the kit through repository-owned `components/align/` components backed by accessible headless behavior; do not recreate a parallel primitive boundary. Illustration, Plot, Vector Canvas, and Templates remain preview/later.
 
 ### Design-trust checklist
 
@@ -31,7 +37,7 @@ Useful recommendations now encoded in FigureLab:
 - a 4 px spacing base with no arbitrary component spacing;
 - semantic color tokens and no raw color literals or palette utilities;
 - one documented radius family instead of unrelated one-off corners;
-- Lucide as the only interface icon family and one tokenized elevation scale;
+- Hugeicons Stroke Rounded as the only interface icon family and one tokenized elevation scale;
 - visible hover, focus, active, disabled, loading, error, and selected states;
 - tabular numerals, safe-area support, conventional navigation, and 44 px coarse-pointer targets;
 - a root `DESIGN.md`, automated `design:audit`, reference research, and a repeatable QA checklist;
@@ -39,7 +45,7 @@ Useful recommendations now encoded in FigureLab:
 
 Web translation and caveats:
 
-- SF Pro, React Native `borderCurve`, native haptics, App Store screenshots, and iOS tab bars are platform-specific. FigureLab uses the ChatGPT-style native system stack, CSS safe-area insets, accessible state feedback, conventional web navigation, and homepage/social-product demonstrations.
+- SF Pro, React Native `borderCurve`, native haptics, App Store screenshots, and iOS tab bars are platform-specific. FigureLab uses Align UI Inter, CSS safe-area insets, accessible state feedback, conventional web navigation, and homepage/social-product demonstrations.
 - CSS `corner-shape: squircle` is a progressive enhancement only because it remains experimental and is not Baseline across major browsers.
 - “One border radius everywhere” is too literal for concentric nested geometry and pill controls. We adopt one governed radius family with explicit roles.
 - The article's conversion benchmarks and causal claims are operator observations, not validated targets for this product. FigureLab will define and test its own funnel baselines.
@@ -61,13 +67,13 @@ The live site was inspected on 2026-08-19. Its useful design language is:
 - large, real product-interface demonstrations instead of decorative dashboard cards;
 - low-chroma atmospheric depth without glassmorphism or neon effects.
 
-Adopt the clarity, spacing, technical field, real-product proof, and single-blue emphasis. Adapt its controls to ChatGPT-style pill buttons. Do not copy Energy's mascot, typography assets, wording, illustrations, or exact layouts.
+Adopt the clarity, spacing, technical field, real-product proof, and single-blue emphasis. Adapt its controls to Align UI's 10px control radius and governed shape roles. Do not copy Energy's mascot, typography assets, wording, illustrations, or exact layouts.
 
 ### 1. ChatGPT-style conversation shell
 
 Practical reference: [assistant-ui ChatGPT clone](https://www.assistant-ui.com/examples/chatgpt)
 
-The live ChatGPT interface was inspected on 2026-08-19. Its rendered UI uses a native system stack beginning with `-apple-system-body`, `ui-sans-serif`, `-apple-system`, `system-ui`, Segoe UI, Helvetica, and Arial. Stanley Studio's visible authentication interface rendered in Inter despite a Plus Jakarta Sans body declaration. FigureLab therefore adopts the ChatGPT system stack: it is closer to the requested reference, avoids another downloadable UI font, and keeps rendering native to each platform.
+The live ChatGPT interface was inspected on 2026-08-19. Its conversation ergonomics remain useful, but FigureLab's visual authority is Align UI 2.0: Inter, compact 10px controls, and a 20px nested composer card.
 
 The assistant-ui example explicitly mirrors the current ChatGPT layout and documents the useful details:
 
@@ -77,7 +83,7 @@ The assistant-ui example explicitly mirrors the current ChatGPT layout and docum
 - tooltipped controls;
 - mutually exclusive send/stop/dictation states;
 - restrained black, white, and neutral surfaces;
-- 28 px composer radius, 36 px composer controls, and compact message actions.
+- compact message actions and clear mutually exclusive input states; geometry follows Align UI rather than ChatGPT.
 
 Adopt:
 
@@ -134,32 +140,21 @@ Avoid:
 - dark mode as the only polished appearance;
 - copying its coral/blue chart palette as brand identity.
 
-### 3. shadcn/ui
+### 3. Repository-owned Align components
 
-References: [introduction](https://ui.shadcn.com/docs), [components](https://ui.shadcn.com/docs/components), [theming](https://ui.shadcn.com/docs/theming), [sidebar](https://ui.shadcn.com/docs/components/radix/sidebar), [blocks](https://ui.shadcn.com/blocks), and [Tailwind v4 guidance](https://ui.shadcn.com/docs/tailwind-v4).
+References: the Align UI Figma file and the exact MCP inventory in [`align-mcp-inventory.md`](./align-mcp-inventory.md).
 
-Decision: **use shadcn/ui as our component source**, not as an untouched visual theme.
+Decision: **FigureLab owns its Align component source in `components/align`.** Radix, cmdk, Sonner, Vaul, and resizable panels may remain behind those public components when they provide necessary accessible behavior.
 
 Why it fits:
 
-- open component code can be owned and adjusted in the repository;
-- current releases support React 19 and Tailwind v4;
-- the current Nova preset is the selected foundation for this project;
-- semantic CSS variables align with the token system in this specification;
-- Sidebar, Resizable, Command, Dialog, Drawer, Tooltip, Field, Empty, Progress, Tabs, and Toast cover the shell without inventing custom primitives.
+- the visual contract comes directly from the complete Align UI 2.0 kit;
+- component source remains editable and reviewable in the repository;
+- semantic CSS variables map directly onto the Align token system;
+- React 19 and Tailwind v4 behavior stays under FigureLab's control;
+- Sidebar, Command Menu, Modal, Drawer, Tooltip, Field, Empty State, Progress, Tabs, and Toast can share one coherent ownership model.
 
-Planned initialization choices:
-
-- style: `radix-nova`;
-- primitives: Radix;
-- base color: `neutral`;
-- CSS variables: enabled;
-- icon library: Lucide;
-- React Server Components: enabled;
-- Tailwind: v4;
-- no class prefix.
-
-Do not install `dashboard-01` wholesale. It is a useful composition reference, but its card/dashboard structure is wrong for a canvas-first product. Use `sidebar-07` only as a source for collapsible behavior and responsive composition.
+Do not import a dashboard template wholesale. Product Navigation and AI Product frames are composition references, while FigureLab's canvas-first information architecture remains authoritative.
 
 ### 4. assistant-ui
 
@@ -199,7 +194,7 @@ Adopt now:
 Adapt:
 
 - call the progress disclosure “Activity,” not hidden model reasoning; expose actions and evidence, not chain-of-thought;
-- map every pattern to FigureLab's semantic tokens, Lucide icons, Radix behavior, pill buttons, and exact `.96` press scale;
+- map every pattern to FigureLab's semantic tokens, Hugeicons Stroke Rounded icons, accessible headless behavior, governed Align UI shape roles, and exact `.96` press scale;
 - keep the interface static by default and animate only state changes the user initiated;
 - preserve the artifact-first layout instead of turning the product into a generic chat interface.
 
@@ -275,11 +270,11 @@ Its artifact versioning and chat-plus-editor separation are useful references, b
 
 | Rank | Source | Use | Decision |
 | --- | --- | --- | --- |
-| 1 | shadcn `radix-nova` neutral preset | Buttons, fields, overlays, sidebar, resizable panes, command menu | Adopt as component source |
+| 1 | Align UI 2.0 Base Components | Buttons, fields, overlays, sidebar, resizable panes, command menu | Adopt as repository-owned component source |
 | 2 | Beautiful UI | AI activity, approvals, source context, selection actions | Adopt patterns, rebuild with our tokens |
 | 3 | assistant-ui thread/composer | Streaming conversation and attachments | Adopt, restyle completely |
 | 4 | React Flow starter and MIT examples | Editable flowchart canvas | Adopt for flowchart MVP |
-| 5 | shadcn `sidebar-07` | Collapsible navigation behavior | Copy relevant composition only |
+| 5 | Align Product Navigation | Collapsible navigation behavior | Adapt relevant composition only |
 | 6 | Vercel Chatbot | Durable chat architecture | Study, do not clone |
 | 7 | assistant-ui artifacts example | Chat plus artifact relationship | Study and simplify |
 | 8 | DataFast live demo | Density, spacing, data hierarchy | Visual reference only |
@@ -287,6 +282,6 @@ Its artifact versioning and chat-plus-editor separation are useful references, b
 
 ## Final reference formula
 
-**Energy editorial clarity + ChatGPT circular controls + DataFast precision + shadcn ownership + Beautiful UI interaction grammar + assistant-ui behavior + React Flow canvas.**
+**Energy editorial clarity + Align UI ownership + DataFast precision + Beautiful UI interaction grammar + assistant-ui behavior + React Flow canvas.**
 
 No single external template is the product. The design system in [README.md](./README.md) is the source of truth.

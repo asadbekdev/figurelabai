@@ -1,8 +1,7 @@
 import { apiError, apiSuccess, fieldErrorsFromZod } from "@/lib/api/envelope"
 import { planRequestSchema } from "@/lib/generation/contracts"
 import { toSafeGenerationError } from "@/lib/generation/errors"
-import { GEMINI_TEXT_MODEL } from "@/lib/generation/gemini"
-import { planFigure } from "@/lib/generation/provider"
+import { resolveModelProvider } from "@/lib/generation/resolve-provider"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
@@ -30,8 +29,16 @@ export async function POST(request: Request) {
   }
 
   try {
-    const plan = await planFigure(parsed.data.prompt, request.signal)
-    return apiSuccess({ plan, model: GEMINI_TEXT_MODEL })
+    const provider = resolveModelProvider(parsed.data.modelProvider)
+    const plan = await provider.planFigure(
+      {
+        prompt: parsed.data.prompt,
+        sourceText: parsed.data.sourceText,
+        sourceImage: parsed.data.sourceImage,
+      },
+      request.signal
+    )
+    return apiSuccess({ plan, provider: provider.id })
   } catch (error) {
     const safe = toSafeGenerationError(error)
     return apiError(safe.status, {

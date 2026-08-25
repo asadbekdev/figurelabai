@@ -13,17 +13,17 @@ import {
   TypeIcon,
   WandSparklesIcon,
   WrapTextIcon,
-} from "lucide-react"
+} from "@/components/icons"
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/align/badge"
+import { Button } from "@/components/align/button"
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+} from "@/components/align/collapsible"
+import { Label } from "@/components/align/label"
+import { RadioGroup, RadioGroupItem } from "@/components/align/radio-group"
 import { cn } from "@/lib/utils"
 
 const activitySteps = [
@@ -36,13 +36,13 @@ export function GenerationActivity({ className }: { className?: string }) {
   return (
     <Collapsible
       defaultOpen
-      className={cn("continuous-corners group rounded-2xl bg-surface-subtle p-4", className)}
+      className={cn("group rounded-lg border border-border bg-sidebar p-4", className)}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-background surface-outline">
+          <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-background">
             <LoaderCircleIcon
-              className="size-4 animate-spin text-brand motion-reduce:animate-none"
+              className="size-4 animate-spin text-foreground motion-reduce:animate-none"
               aria-hidden="true"
             />
           </span>
@@ -68,10 +68,10 @@ export function GenerationActivity({ className }: { className?: string }) {
           {activitySteps.map((step) => (
             <li key={step.label} className="flex items-center gap-2 text-meta">
               {step.state === "complete" ? (
-                <CheckIcon className="size-4 text-success" aria-hidden="true" />
+                <CheckIcon className="size-4 text-foreground" aria-hidden="true" />
               ) : step.state === "active" ? (
                 <LoaderCircleIcon
-                  className="size-4 animate-spin text-brand motion-reduce:animate-none"
+                  className="size-4 animate-spin text-foreground motion-reduce:animate-none"
                   aria-hidden="true"
                 />
               ) : (
@@ -117,10 +117,10 @@ export function GenerationApproval({ className }: { className?: string }) {
   return (
     <section
       aria-labelledby={titleId}
-      className={cn("continuous-corners rounded-2xl bg-surface p-4 surface-outline", className)}
+      className={cn("rounded-lg border border-border bg-background p-4", className)}
     >
       <div className="flex items-start gap-3">
-        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground">
+        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted text-foreground">
           <MessageSquareIcon className="size-4" aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">
@@ -142,8 +142,8 @@ export function GenerationApproval({ className }: { className?: string }) {
               key={option.value}
               htmlFor={optionId}
               className={cn(
-                "flex cursor-pointer items-start gap-3 rounded-xl p-3 surface-outline transition-colors hover:bg-muted",
-                choice === option.value && "bg-accent/60"
+                "flex cursor-pointer items-start gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-hover-veil",
+                choice === option.value && "bg-muted"
               )}
             >
               <RadioGroupItem id={optionId} value={option.value} className="mt-0.5" />
@@ -173,7 +173,7 @@ export function GenerationApproval({ className }: { className?: string }) {
 
 export function SourceContextCard({ className }: { className?: string }) {
   return (
-    <article className={cn("continuous-corners rounded-2xl bg-surface p-4 surface-outline", className)}>
+    <article className={cn("rounded-lg border border-border bg-background p-4", className)}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 items-start gap-3">
           <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-muted">
@@ -186,7 +186,7 @@ export function SourceContextCard({ className }: { className?: string }) {
         </div>
         <Badge variant="secondary"><CheckIcon aria-hidden="true" /> Verified</Badge>
       </div>
-      <blockquote className="mt-4 border-s-2 border-brand ps-3 text-meta leading-relaxed">
+      <blockquote className="mt-4 border-s-2 border-foreground ps-3 text-meta leading-relaxed">
         Amplification follows extraction, then the signal is normalized before analysis.
       </blockquote>
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
@@ -211,7 +211,7 @@ export function SelectionActions({ className }: { className?: string }) {
       <div
         role="toolbar"
         aria-label="Selected label actions"
-        className="flex w-fit max-w-full flex-wrap items-center gap-1 rounded-full bg-surface-raised p-1 surface-outline"
+        className="flex w-fit max-w-full flex-wrap items-center gap-1.5 rounded-lg border border-border bg-background p-1"
       >
         {selectionActions.map((action) => {
           const Icon = action.icon

@@ -1,20 +1,20 @@
 "use client"
 
 import { useId, useState } from "react"
-import { MessageSquareIcon } from "lucide-react"
+import { MessageSquareIcon } from "@/components/icons"
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/align/badge"
+import { Button } from "@/components/align/button"
+import { Input } from "@/components/align/input"
+import { Label } from "@/components/align/label"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
+} from "@/components/align/select"
+import { Textarea } from "@/components/align/textarea"
 import type { FigureDirection, FigureOrientation, FigurePlan } from "@/lib/generation/contracts"
 
 export function FlowchartPlanReview({
@@ -30,24 +30,31 @@ export function FlowchartPlanReview({
 }) {
   const titleId = useId()
   const [draft, setDraft] = useState(plan)
+  const canApprove =
+    Boolean(draft.title.trim()) &&
+    Boolean(draft.goal.trim()) &&
+    draft.structure.sections.every(
+      (section) => Boolean(section.label.trim()) && Boolean(section.purpose.trim())
+    ) &&
+    draft.assumptions.every((assumption) => Boolean(assumption.trim()))
 
   return (
     <section
       aria-labelledby={titleId}
-      className="continuous-corners rounded-2xl bg-surface p-4 surface-outline"
+      className="rounded-2xl border border-border bg-card p-5 shadow-regular-xs"
     >
       <div className="flex items-start gap-3">
-        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground">
-          <MessageSquareIcon className="size-4" aria-hidden="true" />
+        <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-muted text-foreground">
+          <MessageSquareIcon className="size-5" aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 id={titleId} className="text-ui font-medium">
+            <h3 id={titleId} className="text-lg font-medium leading-6">
               Review the generation plan
             </h3>
             <Badge variant="secondary">Needs approval</Badge>
           </div>
-          <p className="mt-1 text-meta text-muted-foreground">
+          <p className="mt-1 text-caption text-muted-foreground">
             Nothing is generated until you approve this interpretation.
           </p>
         </div>
@@ -127,23 +134,80 @@ export function FlowchartPlanReview({
         </div>
       </div>
 
-      <ol className="mt-4 space-y-2">
-        {draft.structure.sections.map((section) => (
-          <li key={section.id} className="rounded-xl bg-surface-subtle px-3 py-2">
-            <p className="text-ui font-medium">{section.label}</p>
-            <p className="text-meta text-muted-foreground">{section.purpose}</p>
+      <ol className="mt-4 space-y-3" aria-label="Planned sections">
+        {draft.structure.sections.map((section, index) => (
+          <li key={section.id} className="space-y-2 rounded-xl bg-muted px-3 py-3">
+            <div className="space-y-1.5">
+              <Label htmlFor={`${titleId}-section-${index}-label`}>
+                Section {index + 1} label
+              </Label>
+              <Input
+                id={`${titleId}-section-${index}-label`}
+                value={section.label}
+                disabled={busy}
+                onChange={(event) =>
+                  setDraft({
+                    ...draft,
+                    structure: {
+                      ...draft.structure,
+                      sections: draft.structure.sections.map((item, itemIndex) =>
+                        itemIndex === index ? { ...item, label: event.target.value } : item
+                      ),
+                    },
+                  })
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor={`${titleId}-section-${index}-purpose`}>
+                Section {index + 1} purpose
+              </Label>
+              <Textarea
+                id={`${titleId}-section-${index}-purpose`}
+                rows={2}
+                value={section.purpose}
+                disabled={busy}
+                onChange={(event) =>
+                  setDraft({
+                    ...draft,
+                    structure: {
+                      ...draft.structure,
+                      sections: draft.structure.sections.map((item, itemIndex) =>
+                        itemIndex === index ? { ...item, purpose: event.target.value } : item
+                      ),
+                    },
+                  })
+                }
+              />
+            </div>
           </li>
         ))}
       </ol>
 
       {draft.assumptions.length > 0 && (
-        <div className="mt-4">
+        <div className="mt-4 space-y-2">
           <p className="text-sm font-medium">Assumptions</p>
-          <ul className="mt-1 list-disc space-y-1 ps-5 text-meta text-muted-foreground">
-            {draft.assumptions.map((assumption) => (
-              <li key={assumption}>{assumption}</li>
-            ))}
-          </ul>
+          {draft.assumptions.map((assumption, index) => (
+            <div key={index} className="space-y-1.5">
+              <Label htmlFor={`${titleId}-assumption-${index}`} className="sr-only">
+                Assumption {index + 1}
+              </Label>
+              <Textarea
+                id={`${titleId}-assumption-${index}`}
+                rows={2}
+                value={assumption}
+                disabled={busy}
+                onChange={(event) =>
+                  setDraft({
+                    ...draft,
+                    assumptions: draft.assumptions.map((item, itemIndex) =>
+                      itemIndex === index ? event.target.value : item
+                    ),
+                  })
+                }
+              />
+            </div>
+          ))}
         </div>
       )}
 
@@ -158,14 +222,29 @@ export function FlowchartPlanReview({
         </div>
       )}
 
-      <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
-        <Button type="button" variant="ghost" disabled={busy} onClick={onRevise}>
+      <div className="-mx-5 -mb-5 mt-5 flex flex-wrap items-center justify-end gap-2 rounded-b-2xl border-t border-border bg-muted px-5 py-3">
+        <Button type="button" variant="outline" disabled={busy} onClick={onRevise}>
           Revise prompt
         </Button>
         <Button
           type="button"
-          disabled={busy || !draft.title.trim() || !draft.goal.trim()}
-          onClick={() => onApprove({ ...draft, title: draft.title.trim(), goal: draft.goal.trim() })}
+          disabled={busy || !canApprove}
+          onClick={() =>
+            onApprove({
+              ...draft,
+              title: draft.title.trim(),
+              goal: draft.goal.trim(),
+              structure: {
+                ...draft.structure,
+                sections: draft.structure.sections.map((section) => ({
+                  ...section,
+                  label: section.label.trim(),
+                  purpose: section.purpose.trim(),
+                })),
+              },
+              assumptions: draft.assumptions.map((assumption) => assumption.trim()),
+            })
+          }
         >
           Approve and generate
         </Button>

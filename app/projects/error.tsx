@@ -2,9 +2,9 @@
 
 import Link from "next/link"
 
-import { ArrowLeftIcon, AlertTriangleIcon } from "lucide-react"
+import { ArrowLeftIcon, AlertTriangleIcon } from "@/components/icons"
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/align/button"
 import {
   Empty,
   EmptyContent,
@@ -12,7 +12,7 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty"
+} from "@/components/align/empty"
 
 export default function Error({
   error,

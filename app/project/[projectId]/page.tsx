@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 
 import { ProjectEditorPageView } from "@/components/product/app-screens"
+import { isProjectId } from "@/lib/product/workspace-types"
 
 export default async function ProjectPage({
   params,
@@ -9,7 +10,7 @@ export default async function ProjectPage({
 }) {
   const { projectId } = await params
 
-  if (projectId !== "demo") {
+  if (!isProjectId(projectId)) {
     notFound()
   }
 

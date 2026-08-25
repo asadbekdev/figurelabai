@@ -1,3 +1,4 @@
+import { grayDocumentColor } from "./document-edits"
 import type {
   FlowchartDocument,
   FlowchartEdge,
@@ -7,6 +8,7 @@ import type {
 export type FlowchartSvgOptions = {
   background: "document" | "transparent"
   resolveColor?: (color: string) => string
+  colorMode?: "color" | "grayscale"
 }
 
 type Point = { x: number; y: number }
@@ -30,9 +32,11 @@ function number(value: number): string {
 
 function resolveColor(
   value: string,
-  resolver: FlowchartSvgOptions["resolveColor"]
+  resolver: FlowchartSvgOptions["resolveColor"],
+  colorMode?: "color" | "grayscale"
 ): string {
-  return resolver ? resolver(value) : value
+  const next = resolver ? resolver(value) : value
+  return grayDocumentColor(next, colorMode)
 }
 
 function nodeCenter(node: FlowchartNode): Point {
@@ -176,8 +180,8 @@ function renderNodeShape(
   const y = node.position.y
   const width = node.size.width
   const height = node.size.height
-  const fill = escapeXml(resolveColor(node.style.fill, options.resolveColor))
-  const stroke = escapeXml(resolveColor(node.style.stroke, options.resolveColor))
+  const fill = escapeXml(resolveColor(node.style.fill, options.resolveColor, options.colorMode))
+  const stroke = escapeXml(resolveColor(node.style.stroke, options.resolveColor, options.colorMode))
   const common = `fill="${fill}" stroke="${stroke}" stroke-width="${number(
     node.style.strokeWidth
   )}"`
@@ -223,6 +227,12 @@ function renderNodeShape(
   } />`
 }
 
+function clipRect(node: FlowchartNode): string {
+  return `<clipPath id="clip-${safeId(node.id)}"><rect x="${number(node.position.x)}" y="${number(
+    node.position.y
+  )}" width="${number(node.size.width)}" height="${number(node.size.height)}" /></clipPath>`
+}
+
 function renderNode(node: FlowchartNode, options: FlowchartSvgOptions): string {
   const lines = wrapLabel(node)
   const lineHeight = node.style.fontSize * 1.25
@@ -232,7 +242,7 @@ function renderNode(node: FlowchartNode, options: FlowchartSvgOptions): string {
     ((lines.length - 1) * lineHeight) / 2 +
     node.style.fontSize * 0.35
   const textColor = escapeXml(
-    resolveColor(node.style.textColor, options.resolveColor)
+    resolveColor(node.style.textColor, options.resolveColor, options.colorMode)
   )
 
   const text = lines
@@ -265,7 +275,7 @@ function renderEdge(
 
   const points = connectionPoints(sourceNode, targetNode)
   const path = edgePath(edge, points.source, points.target)
-  const color = escapeXml(resolveColor(edge.style.color, options.resolveColor))
+  const color = escapeXml(resolveColor(edge.style.color, options.resolveColor, options.colorMode))
   const markerId = `arrow-${safeId(edge.id)}`
   const marker =
     edge.style.markerEnd === "arrow"
@@ -284,7 +294,7 @@ function renderEdge(
       )}" y="${number(labelPoint.y - 11)}" width="${number(
         edge.label.length * 7.4 + 14
       )}" height="22" rx="6" fill="${escapeXml(
-        resolveColor("#ffffff", options.resolveColor)
+        resolveColor("#ffffff", options.resolveColor, options.colorMode)
       )}" fill-opacity="0.94" /><text x="${number(labelPoint.x)}" y="${number(
         labelPoint.y + 4
       )}" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Helvetica, Arial, sans-serif" font-size="12" font-weight="500" fill="${color}">${escapeXml(
@@ -304,23 +314,36 @@ export function renderFlowchartSvg(
   options: FlowchartSvgOptions = { background: "document" }
 ): string {
   const nodes = new Map(document.nodes.map((node) => [node.id, node]))
+  options = { ...options, colorMode: options.colorMode ?? document.page.colorMode }
   const background =
     options.background === "document"
       ? `<rect width="100%" height="100%" fill="${escapeXml(
-          resolveColor(document.page.background, options.resolveColor)
+          resolveColor(document.page.background, options.resolveColor, options.colorMode)
         )}" />`
       : ""
   const edges = document.edges
     .map((edge) => renderEdge(edge, nodes, options))
     .join("")
-  const orderedNodes = [...document.nodes].sort((first, second) => {
-    if (first.type === "group" && second.type !== "group") return -1
-    if (first.type !== "group" && second.type === "group") return 1
-    return 0
-  })
-  const renderedNodes = orderedNodes
-    .map((node) => renderNode(node, options))
-    .join("")
+  const childrenOf = new Map<string | undefined, FlowchartNode[]>()
+  for (const node of document.nodes) {
+    const key = node.parentId
+    const bucket = childrenOf.get(key) ?? []
+    bucket.push(node)
+    childrenOf.set(key, bucket)
+  }
+  const renderBranch = (parentId: string | undefined): string => {
+    const children = childrenOf.get(parentId) ?? []
+    return children
+      .map((node) => {
+        if (node.type !== "group") return renderNode(node, options)
+        const nested = renderBranch(node.id)
+        return `${clipRect(node)}${renderNode(node, options)}<g clip-path="url(#clip-${safeId(
+          node.id
+        )})" data-clip-parent="${escapeXml(node.id)}">${nested}</g>`
+      })
+      .join("")
+  }
+  const renderedNodes = renderBranch(undefined)
 
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',

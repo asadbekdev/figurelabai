@@ -30,6 +30,17 @@ export async function POST(request: Request) {
   }
 
   try {
+    if (parsed.data.modelProvider === "fixture") {
+      return apiSuccess({
+        message: {
+          role: "assistant" as const,
+          content:
+            "The fixture provider is an offline demo and cannot hold a real conversation. Switch the model to Gemini for live answers, or use Flowchart, Illustration, or Plot mode to generate a deterministic fixture figure.",
+        },
+        model: "fixture",
+      })
+    }
+
     const text = await chatWithFigureLab(parsed.data.messages, request.signal)
     return apiSuccess({
       message: { role: "assistant" as const, content: text },

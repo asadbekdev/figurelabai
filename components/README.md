@@ -1,18 +1,18 @@
 # FigureLab component library
 
-This directory is the implementation layer for the product design system documented in [`docs/design-system`](../docs/design-system/README.md). The live catalog is the home route during development.
+This directory is the implementation layer for the product design system documented in [`docs/design-system`](../docs/design-system/README.md). The live catalog is available at `/components`.
 
 ## Architecture
 
 ```text
 app/globals.css              Semantic tokens, themes, type roles, utilities
-components/ui/               Reusable interface primitives
+components/align/            Repository-owned Align UI primitives
 components/product/          FigureLab workflow patterns
 components/component-library.tsx
                              Interactive catalog and acceptance surface
 ```
 
-The layering rule is strict: product patterns may compose `ui` primitives, while primitives never import product components.
+The layering rule is strict: product patterns may compose `align` primitives, while primitives never import product components.
 
 ## Primitive inventory
 
@@ -42,16 +42,16 @@ The layering rule is strict: product patterns may compose `ui` primitives, while
 Import components from their owned file so bundle boundaries remain explicit:
 
 ```tsx
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/align/button"
 import { PromptComposer } from "@/components/product"
 ```
 
-Use semantic tokens (`bg-surface`, `text-muted-foreground`, `text-success`) instead of raw colors. Preserve visible labels, focus treatment, live-region feedback, 40 px default controls, logical-direction utilities, reduced-motion behavior, and the pill-button/circular-icon silhouette when extending a component.
+Use semantic tokens (`bg-background`, `bg-sidebar`, `text-muted-foreground`) instead of raw colors. Preserve visible labels, focus treatment, live-region feedback, 40 px default controls, logical-direction utilities, reduced-motion behavior, 10px control radius, square badges, and the single account pill when extending a component.
 
 Run `npm run design:audit` after UI work. It enforces the core rules in the repository-level [`DESIGN.md`](../DESIGN.md) before lint and production build verification.
 
-Beautiful UI is an interaction reference, not a second visual system. Rebuild useful AI patterns from our tokens, Lucide icons, Radix behavior, and `.96` press feedback; do not import its custom theme, demo autoplay, inline icon set, or shader effects by default.
+Beautiful UI is an interaction reference, not a second visual system. Rebuild useful AI patterns from our tokens, Hugeicons Stroke Rounded icons, accessible headless behavior, and `.96` press feedback; do not import its custom theme, demo autoplay, inline icon set, or shader effects by default.
 
 ## Scope boundary
 
-This library owns interface presentation and behavior. The future flowchart canvas engine, conversational runtime, generation jobs, persistence, and export pipeline are application services and intentionally do not live in the component layer.
+This library owns interface presentation and behavior. The flowchart canvas engine, conversational runtime, generation jobs, persistence, and export pipeline are application services and intentionally do not live in the component layer.

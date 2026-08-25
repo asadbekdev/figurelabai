@@ -13,6 +13,10 @@
 # testing
 /coverage
 /.playwright-cli
+/test-results
+/playwright-report
+/blob-report
+/output/
 
 # next.js
 /.next/
@@ -20,6 +24,9 @@
 
 # production
 /build
+
+# local durable job records
+/.data/
 
 # misc
 .DS_Store
