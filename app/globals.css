@@ -307,6 +307,65 @@
   --elevation-fancy-stroke: 0 1px 3px 0 oklch(0 0 0 / 0.4);
 }
 
+.marketing-light {
+  color-scheme: light;
+  --bg-white-0: var(--gray-0);
+  --bg-weak-50: var(--gray-50);
+  --bg-soft-200: var(--gray-200);
+  --bg-strong-950: var(--gray-950);
+  --text-strong-950: var(--gray-950);
+  --text-sub-600: var(--gray-600);
+  --text-soft-400: var(--gray-400);
+  --text-disabled-300: var(--gray-300);
+  --stroke-soft-200: var(--gray-200);
+  --stroke-sub-300: var(--gray-300);
+  --primary-base: var(--blue-500);
+  --primary-darker: var(--blue-700);
+  --primary-dark: var(--blue-800);
+  --primary-lighter: var(--blue-50);
+  --primary-alpha-10: var(--blue-alpha-10);
+  --primary-alpha-16: #476cff29;
+  --background: var(--gray-0);
+  --foreground: var(--gray-950);
+  --surface: var(--gray-0);
+  --surface-subtle: var(--gray-50);
+  --surface-raised: var(--gray-0);
+  --card: var(--gray-0);
+  --card-foreground: var(--gray-950);
+  --popover: var(--gray-0);
+  --popover-foreground: var(--gray-950);
+  --primary: var(--blue-500);
+  --primary-foreground: var(--gray-0);
+  --primary-darker: var(--blue-700);
+  --primary-lighter: var(--blue-50);
+  --secondary: var(--gray-50);
+  --secondary-foreground: var(--gray-950);
+  --muted: var(--gray-50);
+  --muted-foreground: var(--gray-600);
+  --accent: var(--blue-alpha-10);
+  --accent-foreground: var(--gray-950);
+  --brand: var(--blue-500);
+  --brand-foreground: var(--gray-0);
+  --success: var(--green-500);
+  --success-foreground: var(--gray-0);
+  --success-lighter: var(--green-50);
+  --warning: var(--orange-500);
+  --warning-foreground: var(--gray-950);
+  --warning-lighter: var(--orange-50);
+  --info: var(--blue-500);
+  --info-foreground: var(--gray-0);
+  --info-lighter: var(--blue-50);
+  --border: var(--gray-200);
+  --input: var(--gray-200);
+  --ring: var(--blue-500);
+  --hollow: var(--gray-400);
+  --elevation-regular-xs: 0 1px 2px 0 #0a0d1408;
+  --elevation-regular-sm: 0 2px 4px #1b1c1d0a;
+  --elevation-regular-md: 0 16px 32px -12px #0e121b1a;
+  --elevation-input: 0 1px 2px 0 #0a0d1408;
+  --elevation-overlay: 0 16px 32px -12px #0e121b29;
+}
+
 @media (prefers-contrast: more) {
   :root {
     --border: oklch(0.205 0 0 / 0.36);
