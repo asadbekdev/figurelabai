@@ -16,12 +16,12 @@ import { useProjectSessionStore } from "@/lib/product/project-session"
 import { useProjectPersistence } from "@/lib/product/use-project-persistence"
 import { useRecentsStore } from "@/lib/product/recents-store"
 
-function WorkbenchPageView() {
+function WorkbenchPageView({ initialPrompt = "" }: { initialPrompt?: string }) {
   const newFigureKey = useRecentsStore((state) => state.newFigureKey)
 
   return (
     <AppShell>
-      <WorkbenchGeneration key={newFigureKey} />
+      <WorkbenchGeneration key={`${newFigureKey}:${initialPrompt}`} initialPrompt={initialPrompt} />
     </AppShell>
   )
 }

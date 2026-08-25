@@ -3,11 +3,13 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import Image from "next/image"
 import Link from "next/link"
-import { useState, type ReactNode } from "react"
+import { useRouter } from "next/navigation"
+import { useState, type FormEvent, type ReactNode } from "react"
 
 import { Button } from "@/components/align/button"
 import {
   ArrowUpRightIcon,
+  ArrowUpIcon,
   CheckCircle2Icon,
   CheckIcon,
   FlowchartIcon,
@@ -67,9 +69,24 @@ const capabilities = [
 ] as const
 
 const workflow = [
-  ["Describe", "Paste the process, pathway, study flow, or source material in plain language."],
-  ["Approve", "Review FigureLab’s interpretation and fix the structure before generation."],
-  ["Refine", "Edit every node and connection, request changes, verify, and export."],
+  ["Input", "Describe the process, pathway, study flow, or source material in plain language."],
+  ["Plan", "Review FigureLab’s interpretation and correct the structure before generation."],
+  ["Edit", "Move nodes, reconnect steps, rewrite labels, and request targeted revisions."],
+  ["Export", "Run readiness checks, save a version, and export clean SVG or PNG."],
+] as const
+
+const examplePrompts = [
+  "PCR workflow with a QC retry",
+  "PRISMA study-selection flow",
+  "Clinical trial participant pathway",
+  "Model training and evaluation loop",
+] as const
+
+const productProof = [
+  ["Plan", "Approve the logic first"],
+  ["Canvas", "Edit every object"],
+  ["Versions", "Keep revision history"],
+  ["Export", "SVG and PNG output"],
 ] as const
 
 const useCases = [
@@ -118,33 +135,20 @@ function Reveal({
   )
 }
 
-function ProductFrame({ priority = false }: { priority?: boolean }) {
-  return (
-    <div className="mx-auto mt-14 max-w-7xl rounded-[40px] bg-accent p-3 ring-1 ring-primary/10 sm:p-5 lg:p-8">
-      <motion.div
-        whileHover={{ y: -4 }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
-        className="overflow-hidden rounded-2xl bg-background shadow-regular-md ring-1 ring-border"
-      >
-        <Image
-          src="/marketing/figurelab-workspace.jpg"
-          alt="FigureLab editor with an editable PCR workflow, sidebar, inspector, and revision composer"
-          width={1280}
-          height={800}
-          priority={priority}
-          className="h-auto w-full"
-          sizes="(max-width: 1280px) 100vw, 1280px"
-        />
-      </motion.div>
-    </div>
-  )
-}
-
 export function LandingPage() {
+  const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [landingPrompt, setLandingPrompt] = useState("")
   const [activeCapability, setActiveCapability] = useState<(typeof capabilities)[number]["id"]>("plan")
   const reduceMotion = useReducedMotion()
   const active = capabilities.find((item) => item.id === activeCapability) ?? capabilities[0]
+
+  function startFromLanding(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const prompt = landingPrompt.trim()
+    if (!prompt) return
+    router.push(`/create?prompt=${encodeURIComponent(prompt)}`)
+  }
 
   return (
     <div className="marketing-light min-h-svh overflow-x-hidden bg-background text-foreground">
@@ -155,7 +159,15 @@ export function LandingPage() {
         Skip to content
       </a>
 
-      <header className="relative z-50 bg-background">
+      <div className="flex min-h-9 items-center justify-center bg-foreground px-5 py-2 text-center text-caption text-background/80">
+        <span className="text-background">Flowchart Release 1 is live.</span>
+        <Link className="ml-2 inline-flex items-center gap-1 text-background underline-offset-4 hover:underline" href="/create">
+          Start a local draft
+          <ArrowUpRightIcon className="size-3.5" aria-hidden="true" />
+        </Link>
+      </div>
+
+      <header className="sticky top-0 z-50 border-b border-transparent bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/85">
         <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 lg:px-8">
           <Link href="/" aria-label="FigureLab home">
             <Brand />
@@ -228,38 +240,79 @@ export function LandingPage() {
       </header>
 
       <main id="main-content">
-        <section className="px-5 pb-20 pt-16 text-center sm:pt-24 lg:px-8">
+        <section className="relative isolate overflow-hidden px-5 pb-24 pt-16 text-center sm:pt-24 lg:px-8">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 top-0 -z-10 mx-auto h-[760px] max-w-7xl bg-[radial-gradient(circle_at_center,var(--accent),transparent_58%)]"
+          />
           <Reveal>
             <div className="mx-auto inline-flex items-center gap-2 rounded-lg bg-muted px-2.5 py-1.5 text-caption text-muted-foreground">
               <span className="rounded-md bg-background px-1.5 py-0.5 text-subheading text-primary shadow-regular-xs">R1</span>
-              Flowchart workspace is live
+              Review-first scientific figure generation
             </div>
             <h1 className="mx-auto mt-6 max-w-4xl text-[2.75rem] font-medium leading-[1.06] tracking-[-0.04em] sm:text-6xl sm:leading-[1.04] lg:text-[4.5rem]">
-              Research logic in.
-              <span className="block text-muted-foreground">Editable figures out.</span>
+              Scientific flowcharts,
+              <span className="block text-muted-foreground">made editable.</span>
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-body text-muted-foreground sm:text-lg sm:leading-7">
-              Describe a process, review the plan, edit every object, and export a figure you can actually publish.
+              Turn a protocol, study design, or research workflow into a reviewable plan and an editable figure.
             </p>
-            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Button size="lg" className="w-full sm:w-auto" asChild>
-                <Link href="/create">
-                  Create a flowchart
-                  <ArrowUpRightIcon aria-hidden="true" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" className="w-full sm:w-auto" asChild>
-                <Link href="#product">Explore the product</Link>
-              </Button>
-            </div>
-            <p className="mt-3 text-caption text-hollow">No account required for a local first draft.</p>
           </Reveal>
-          <Reveal delay={0.08} amount={0.03}>
-            <ProductFrame priority />
+
+          <Reveal delay={0.08} amount={0.03} className="mx-auto mt-10 max-w-3xl">
+            <form
+              className="rounded-2xl bg-background p-2 text-left shadow-regular-md ring-1 ring-border"
+              aria-label="Create a scientific flowchart"
+              onSubmit={startFromLanding}
+            >
+              <label className="sr-only" htmlFor="landing-prompt">Describe the scientific flowchart you want to create</label>
+              <textarea
+                id="landing-prompt"
+                name="prompt"
+                value={landingPrompt}
+                onChange={(event) => setLandingPrompt(event.target.value)}
+                placeholder="Describe a process, pathway, or study flow…"
+                className="min-h-32 w-full resize-none bg-transparent px-4 py-3 text-body text-foreground outline-none placeholder:text-hollow sm:min-h-36 sm:px-5 sm:py-4 sm:text-lg"
+              />
+              <div className="flex items-center justify-between gap-3 border-t px-2 py-2 sm:px-3">
+                <span className="inline-flex items-center gap-2 rounded-lg bg-muted px-2.5 py-1.5 text-caption text-muted-foreground">
+                  <FlowchartIcon className="size-4 text-primary" aria-hidden="true" />
+                  Flowchart
+                </span>
+                <Button type="submit" size="icon" disabled={!landingPrompt.trim()} aria-label="Create flowchart from prompt">
+                  <ArrowUpIcon aria-hidden="true" />
+                </Button>
+              </div>
+            </form>
+
+            <div className="mt-4 flex flex-wrap justify-center gap-2" aria-label="Example flowchart prompts">
+              {examplePrompts.map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  onClick={() => setLandingPrompt(prompt)}
+                  className="rounded-full bg-background px-3 py-2 text-caption text-muted-foreground shadow-regular-xs ring-1 ring-border transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
+            <p className="mt-4 text-caption text-hollow">No account required for a local first draft.</p>
           </Reveal>
         </section>
 
-        <section id="product" className="scroll-mt-20 border-y bg-muted px-5 py-24 lg:px-8">
+        <section aria-label="FigureLab product capabilities" className="border-y bg-background px-5 lg:px-8">
+          <div className="mx-auto grid max-w-7xl divide-y sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
+            {productProof.map(([label, value]) => (
+              <div key={label} className="px-5 py-6 text-left first:pl-0 last:pr-0 sm:text-center">
+                <p className="text-subheading text-primary">{label}</p>
+                <p className="mt-1 text-ui text-muted-foreground">{value}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section id="product" className="scroll-mt-20 bg-muted px-5 py-24 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <Reveal>
               <div className="grid gap-8 lg:grid-cols-[0.78fr_1.22fr] lg:items-end">
@@ -353,17 +406,17 @@ export function LandingPage() {
             <Reveal className="text-center">
               <span className="inline-flex rounded-lg bg-muted px-2.5 py-1.5 text-caption text-muted-foreground">A visible workflow</span>
               <h2 className="mx-auto mt-5 max-w-3xl text-4xl font-medium leading-tight tracking-[-0.035em] sm:text-5xl">
-                Go from rough logic to a figure in three deliberate steps.
+                From research input to export in four visible steps.
               </h2>
             </Reveal>
 
-            <div className="mt-14 grid gap-3 lg:grid-cols-3">
+            <div className="mt-14 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {workflow.map(([title, description], index) => (
                 <Reveal key={title} delay={index * 0.05}>
                   <article className="min-h-56 rounded-2xl bg-muted p-6">
                     <div className="flex items-center justify-between">
                       <span className="grid size-10 place-items-center rounded-lg bg-background text-ui text-primary shadow-regular-xs ring-1 ring-border">0{index + 1}</span>
-                      <span className="text-caption text-hollow">{index < 2 ? "Next" : "Ready"}</span>
+                      <span className="text-caption text-hollow">{index < workflow.length - 1 ? "Next" : "Ready"}</span>
                     </div>
                     <h3 className="mt-8 text-xl font-medium tracking-[-0.02em]">{title}</h3>
                     <p className="mt-3 text-caption text-muted-foreground">{description}</p>

@@ -62,7 +62,13 @@ function message(authorType: ProjectMessage["authorType"], content: string): Pro
   }
 }
 
-export function WorkbenchGeneration({ className }: { className?: string }) {
+export function WorkbenchGeneration({
+  className,
+  initialPrompt = "",
+}: {
+  className?: string
+  initialPrompt?: string
+}) {
   const router = useRouter()
   const addImage = useGenerationSessionStore((state) => state.addImage)
   const setLastPlan = useGenerationSessionStore((state) => state.setLastPlan)
@@ -108,7 +114,7 @@ export function WorkbenchGeneration({ className }: { className?: string }) {
   const [pendingModelProvider, setPendingModelProvider] = useState<ModelProviderChoice | undefined>(
     undefined
   )
-  const seedPrompt = composerSeed ?? persistedSeed?.prompt ?? ""
+  const seedPrompt = composerSeed ?? persistedSeed?.prompt ?? initialPrompt
   const seedMode = composerMode ?? persistedSeed?.mode
   const { job, error: jobError, errorCode: jobErrorCode } = useGenerationJob(jobId)
   const variantJobs = useGenerationJobs(variantJobIds)
