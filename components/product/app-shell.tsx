@@ -195,7 +195,7 @@ function SidebarBody({
     return (
       <div className="flex h-full min-h-0 flex-col items-center gap-3 px-2 py-5">
         <Link
-          href="/"
+          href="/create"
           onClick={onNavigate}
           className="grid size-8 place-items-center rounded-lg bg-primary text-sm font-medium text-primary-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
           aria-label="FigureLab home"
@@ -261,7 +261,7 @@ function SidebarBody({
       <div className="flex flex-col gap-5">
         <div className="flex items-center justify-between ps-1.5">
           <Link
-            href="/"
+            href="/create"
             onClick={onNavigate}
             className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-sm font-medium text-primary-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
             aria-label="FigureLab home"
@@ -447,7 +447,7 @@ export function AppShell({
     clearComposerSeed()
     startNewFigure()
     setMobileOpen(false)
-    router.push("/")
+    router.push("/create")
   }
 
   return (

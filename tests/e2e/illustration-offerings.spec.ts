@@ -20,8 +20,8 @@ async function expectProjectImage(page: Page) {
   await expect(page.getByRole("img").first()).toBeVisible({ timeout: 20_000 })
 }
 
-test("home defaults to Flowchart and the Illustration preview remains usable", async ({ page }) => {
-  await page.goto("/")
+test("workspace defaults to Flowchart and the Illustration preview remains usable", async ({ page }) => {
+  await page.goto("/create")
   await expect(page.getByRole("heading", { name: "Hello" })).toBeVisible()
   await expect(page.getByRole("button", { name: /Figure type: Flowchart/ })).toBeVisible()
   await expect(page.getByRole("button", { name: /Model:/ })).toHaveCount(0)
@@ -48,7 +48,7 @@ test("home defaults to Flowchart and the Illustration preview remains usable", a
 })
 
 test("Image to Figure with an attached photo produces a project image", async ({ page }) => {
-  await page.goto("/")
+  await page.goto("/create")
   await selectIllustrationPreview(page)
   await page.getByRole("button", { name: /Text to Figure|Image to Figure|Sketch to Figure|Enhance Figure|Add Ref Figure/ }).click()
   await page.getByRole("menuitemradio", { name: /Image to Figure/ }).click()

@@ -39,7 +39,7 @@ export default function Error({
             <div className="flex flex-wrap justify-center gap-2">
               <Button onClick={reset}>Try again</Button>
               <Button variant="outline" asChild>
-                <Link href="/">
+                <Link href="/create">
                   <ArrowLeftIcon aria-hidden="true" />
                   Go home
                 </Link>

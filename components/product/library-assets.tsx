@@ -353,7 +353,7 @@ export function LibraryAssets() {
           action={
             assets.length === 0 ? (
               <Button asChild>
-                <Link href="/">
+                <Link href="/create">
                   <PlusIcon aria-hidden="true" />
                   New flowchart
                 </Link>

@@ -120,9 +120,9 @@ function FigureLabNotFound({ title, description }: { title: string; description:
         description={description}
         action={
           <Button variant="account" asChild>
-            <Link href="/">
+            <Link href="/create">
               <ArrowLeftIcon aria-hidden="true" />
-              Back to home
+              Back to workspace
             </Link>
           </Button>
         }

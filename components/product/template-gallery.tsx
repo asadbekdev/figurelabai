@@ -185,7 +185,7 @@ function IllustrationTemplateCard({
 
   function useStarter() {
     writeComposerSeed({ prompt: starter.prompt, mode: "illustration" })
-    router.push("/")
+    router.push("/create")
   }
 
   async function openInCanvas() {

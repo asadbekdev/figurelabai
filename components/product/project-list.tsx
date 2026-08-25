@@ -189,7 +189,7 @@ export function ProjectList() {
           description="Easily manage and explore all your active projects in one place."
           action={
             <Button size="xs" asChild>
-              <Link href="/">
+              <Link href="/create">
                 <PlusIcon aria-hidden="true" />
                 Create project
               </Link>
@@ -203,7 +203,7 @@ export function ProjectList() {
           description="Projects appear here after you start a generation."
           action={
             <Button asChild>
-              <Link href="/">
+              <Link href="/create">
                 <PlusIcon aria-hidden="true" />
                 New flowchart
               </Link>
@@ -222,7 +222,7 @@ export function ProjectList() {
         description="Easily manage and explore all your active projects in one place."
         action={
           <Button size="xs" asChild>
-            <Link href="/">
+            <Link href="/create">
               <PlusIcon aria-hidden="true" />
               Create project
             </Link>

@@ -8,7 +8,7 @@ test("prompt to plan to editable export survives direct reopen", async ({ page }
   const pageErrors: string[] = []
   page.on("pageerror", (error) => pageErrors.push(error.message))
 
-  await page.goto("/")
+  await page.goto("/create")
   await page
     .getByRole("textbox", { name: "Describe a process, pathway, or logic" })
     .fill("Collect sample, extract DNA, amplify target, and analyze the result")
@@ -87,7 +87,7 @@ test("prompt to plan to editable export survives direct reopen", async ({ page }
 })
 
 test("failed fixture generation retries the same durable job", async ({ page }) => {
-  await page.goto("/")
+  await page.goto("/create")
   await page
     .getByRole("textbox", { name: "Describe a process, pathway, or logic" })
     .fill("Please fail the draft once, then recover this RNA workflow")

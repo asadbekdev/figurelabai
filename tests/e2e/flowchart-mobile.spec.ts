@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test"
 
 test("390px plan keeps approval after every editable field", async ({ page }) => {
-  await page.goto("/")
+  await page.goto("/create")
   await page
     .getByRole("textbox", { name: "Describe a process, pathway, or logic" })
     .fill("Collect blood, isolate plasma, run biomarker assay, and review the result")
