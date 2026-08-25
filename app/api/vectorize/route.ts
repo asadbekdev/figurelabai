@@ -2,6 +2,7 @@ import { z } from "zod"
 
 import { apiError, apiSuccess, fieldErrorsFromZod } from "@/lib/api/envelope"
 import { toSafeGenerationError } from "@/lib/generation/errors"
+import { authorizePublicApi } from "@/lib/public-api/auth"
 import { VECTORIZE_DETAILS, VECTORIZE_PREPROCESS } from "@/lib/vectorize/options"
 import { vectorizeRaster } from "@/lib/vectorize/trace"
 
@@ -27,6 +28,9 @@ const vectorizeRequestSchema = z
   .strict()
 
 export async function POST(request: Request) {
+  const denied = authorizePublicApi(request)
+  if (denied) return denied
+
   let body: unknown
   try {
     body = await request.json()

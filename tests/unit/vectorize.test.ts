@@ -1,8 +1,13 @@
 import sharp from "sharp"
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { POST } from "@/app/api/vectorize/route"
 import { GenerationError } from "@/lib/generation/errors"
 import { vectorizeRaster } from "@/lib/vectorize/trace"
+
+afterEach(() => {
+  vi.unstubAllEnvs()
+})
 
 async function fixturePng(): Promise<Buffer> {
   const svg = `<svg width="240" height="160" xmlns="http://www.w3.org/2000/svg">
@@ -14,6 +19,30 @@ async function fixturePng(): Promise<Buffer> {
 }
 
 describe("vectorizeRaster", () => {
+  it("requires the configured API key before parsing an upload", async () => {
+    vi.stubEnv("FIGURELAB_API_KEY", "preview-secret")
+    const denied = await POST(
+      new Request("http://localhost/api/vectorize", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({}),
+      })
+    )
+    expect(denied.status).toBe(401)
+
+    const authorized = await POST(
+      new Request("http://localhost/api/vectorize", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-api-key": "preview-secret",
+        },
+        body: JSON.stringify({}),
+      })
+    )
+    expect(authorized.status).toBe(400)
+  })
+
   it("traces a raster PNG into SVG paths", async () => {
     const png = await fixturePng()
     const result = await vectorizeRaster({ data: png })
