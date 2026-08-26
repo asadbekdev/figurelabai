@@ -8,16 +8,29 @@ import { useState, type FormEvent, type ReactNode } from "react"
 
 import { Button } from "@/components/align/button"
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/align/accordion"
+import {
   ArrowUpRightIcon,
   ArrowUpIcon,
   CheckCircle2Icon,
   CheckIcon,
+  DatabaseIcon,
+  DownloadIcon,
+  FileTextIcon,
   FlowchartIcon,
+  InfoIcon,
   Layers3Icon,
+  LockIcon,
   MenuIcon,
   MessageSquareIcon,
+  MousePointer2Icon,
   PencilIcon,
   SparklesIcon,
+  Undo2Icon,
   XIcon,
 } from "@/components/icons"
 import { cn } from "@/lib/align/utils"
@@ -25,8 +38,8 @@ import { cn } from "@/lib/align/utils"
 const navItems = [
   { href: "#product", label: "Product" },
   { href: "#workflow", label: "How it works" },
-  { href: "#use-cases", label: "Use cases" },
-  { href: "/api", label: "API" },
+  { href: "#examples", label: "Examples" },
+  { href: "#faq", label: "FAQ" },
 ] as const
 
 const capabilities = [
@@ -96,6 +109,97 @@ const useCases = [
   ["Scientific pathways", "Translate dense mechanisms into structured visuals ready for the next revision."],
 ] as const
 
+const workspaceDetails = [
+  {
+    title: "Editable canvas",
+    description: "Move nodes, reconnect steps, and rewrite labels directly.",
+    icon: MousePointer2Icon,
+  },
+  {
+    title: "Object inspector",
+    description: "Inspect structure and visual properties without leaving the figure.",
+    icon: Layers3Icon,
+  },
+  {
+    title: "Revision history",
+    description: "Create named checkpoints and restore without overwriting history.",
+    icon: Undo2Icon,
+  },
+  {
+    title: "Verified export",
+    description: "Run readiness checks before downloading SVG or PNG.",
+    icon: DownloadIcon,
+  },
+] as const
+
+const promptStarters = [
+  {
+    category: "Protocol",
+    prompt: "Create a PCR workflow with a quality-control decision and retry loop",
+  },
+  {
+    category: "Evidence review",
+    prompt: "Map a PRISMA flow from identification through screening, eligibility, and inclusion",
+  },
+  {
+    category: "Clinical research",
+    prompt: "Show a participant pathway from screening through follow-up with withdrawal branches",
+  },
+  {
+    category: "Model development",
+    prompt: "Diagram data ingestion, training, evaluation, approval, and deployment as an editable loop",
+  },
+] as const
+
+const releaseCapabilities = [
+  "Editable plan before generation",
+  "Direct node, label, and connection editing",
+  "Local project recovery and named versions",
+  "Deterministic publication-readiness checks",
+  "Clean SVG and high-resolution PNG export",
+  "A local first draft without an account",
+] as const
+
+const laterCapabilities = [
+  "Illustration and plot generation",
+  "Real-time team collaboration",
+  "PDF and native PowerPoint export",
+  "Cross-device cloud workspaces",
+] as const
+
+const faqItems = [
+  {
+    id: "available",
+    question: "What can I create in the current release?",
+    answer:
+      "Flowchart is the production path today. You can describe a process, review the interpreted plan, generate an editable structural draft, revise it, run readiness checks, and export SVG or PNG. Illustration and Plot remain later modes.",
+  },
+  {
+    id: "approval",
+    question: "Does FigureLab generate before I approve the structure?",
+    answer:
+      "No. The preflight plan exposes the interpreted title, goal, direction, sections, and assumptions first. You can correct that plan before approving generation.",
+  },
+  {
+    id: "editable",
+    question: "Is the result actually editable?",
+    answer:
+      "Yes. The flowchart remains a structured document with editable nodes, connections, labels, layout, and visual properties rather than a flattened image.",
+  },
+  {
+    id: "saved",
+    question: "Where is my work saved?",
+    answer:
+      "The current release uses a local browser workspace with recovery snapshots and named versions. Reopen it in the same browser and device to continue. Cloud workspaces are intentionally not implied yet.",
+  },
+  {
+    id: "readiness",
+    question: "Does a readiness check guarantee publication acceptance?",
+    answer:
+      "No. FigureLab checks deterministic issues such as empty labels, dangling connections, bounds, overlaps, text sizing, and export settings. You should still verify scientific accuracy and journal requirements before publishing.",
+  },
+] as const
+
 function Brand() {
   return (
     <span className="inline-flex items-center gap-2.5">
@@ -160,9 +264,11 @@ export function LandingPage() {
       </a>
 
       <div className="flex min-h-9 items-center justify-center bg-foreground px-5 py-2 text-center text-caption text-background/80">
-        <span className="text-background">Flowchart Release 1 is live.</span>
+        <span className="text-background sm:hidden">Flowchart R1 is live.</span>
+        <span className="hidden text-background sm:inline">Flowchart Release 1 is live.</span>
         <Link className="ml-2 inline-flex items-center gap-1 text-background underline-offset-4 hover:underline" href="/create">
-          Start a local draft
+          <span className="sm:hidden">Start a draft</span>
+          <span className="hidden sm:inline">Start a local draft</span>
           <ArrowUpRightIcon className="size-3.5" aria-hidden="true" />
         </Link>
       </div>
@@ -427,6 +533,100 @@ export function LandingPage() {
           </div>
         </section>
 
+        <section className="border-y bg-muted px-5 py-24 lg:px-8">
+          <div className="mx-auto max-w-7xl">
+            <Reveal>
+              <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:items-end">
+                <div>
+                  <p className="text-subheading text-primary">A complete editing surface</p>
+                  <h2 className="mt-4 max-w-xl text-4xl font-medium leading-tight tracking-[-0.035em] text-balance sm:text-5xl">
+                    See the workspace—not just the generated image.
+                  </h2>
+                </div>
+                <div className="max-w-xl lg:justify-self-end">
+                  <p className="text-body text-muted-foreground text-pretty">
+                    The canvas, inspector, versions, and revision composer stay together so every change remains visible and recoverable.
+                  </p>
+                  <Button className="mt-6" variant="outline" asChild>
+                    <Link href="/project/demo">
+                      Open the demo project
+                      <ArrowUpRightIcon aria-hidden="true" />
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </Reveal>
+
+            <Reveal delay={0.06} amount={0.08} className="mt-12">
+              <div className="overflow-hidden rounded-2xl bg-background shadow-regular-md ring-1 ring-border">
+                <Image
+                  src="/marketing/figurelab-workspace.jpg"
+                  alt="FigureLab workspace with a PCR flowchart, sidebar, object inspector, versions, export, and revision composer"
+                  width={1280}
+                  height={800}
+                  loading="eager"
+                  className="image-outline h-auto w-full"
+                  sizes="(max-width: 1280px) 100vw, 1280px"
+                />
+              </div>
+            </Reveal>
+
+            <div className="mt-8 grid divide-y border-y sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
+              {workspaceDetails.map((item, index) => {
+                const Icon = item.icon
+                return (
+                  <Reveal key={item.title} delay={index * 0.04}>
+                    <article className="min-h-44 px-5 py-6">
+                      <span className="grid size-10 place-items-center rounded-lg bg-accent text-primary">
+                        <Icon className="size-5" aria-hidden="true" />
+                      </span>
+                      <h3 className="mt-5 text-title-sm">{item.title}</h3>
+                      <p className="mt-2 text-caption text-muted-foreground text-pretty">{item.description}</p>
+                    </article>
+                  </Reveal>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section id="examples" className="scroll-mt-20 px-5 py-24 lg:px-8">
+          <div className="mx-auto max-w-7xl">
+            <Reveal>
+              <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:items-end">
+                <div>
+                  <p className="text-subheading text-primary">Real starting points</p>
+                  <h2 className="mt-4 max-w-xl text-4xl font-medium leading-tight tracking-[-0.035em] text-balance sm:text-5xl">
+                    Start from scientific structure, not an empty canvas.
+                  </h2>
+                </div>
+                <p className="max-w-xl text-body text-muted-foreground text-pretty lg:justify-self-end">
+                  Each prompt enters the same review-first flow. FigureLab interprets the structure, asks for approval, and only then creates an editable draft.
+                </p>
+              </div>
+            </Reveal>
+
+            <div className="mt-12 overflow-hidden rounded-2xl bg-background shadow-regular-sm ring-1 ring-border">
+              {promptStarters.map((item, index) => (
+                <Reveal key={item.prompt} delay={index * 0.04}>
+                  <Link
+                    href={`/create?prompt=${encodeURIComponent(item.prompt)}`}
+                    className="group grid min-h-28 gap-4 border-b px-5 py-5 last:border-b-0 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary sm:grid-cols-[48px_160px_1fr_auto] sm:items-center sm:px-6"
+                  >
+                    <span className="text-caption text-hollow tabular-nums">0{index + 1}</span>
+                    <span className="text-ui text-primary">{item.category}</span>
+                    <span className="max-w-2xl text-title-sm leading-6 text-pretty">{item.prompt}</span>
+                    <span className="inline-flex items-center gap-1 text-ui text-muted-foreground motion-safe:transition-colors motion-safe:duration-150 group-hover:text-foreground">
+                      Use prompt
+                      <ArrowUpRightIcon className="size-4" aria-hidden="true" />
+                    </span>
+                  </Link>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section id="use-cases" className="scroll-mt-20 px-5 pb-24 lg:px-8">
           <Reveal>
             <div className="mx-auto grid max-w-7xl overflow-hidden rounded-[40px] bg-foreground text-background lg:grid-cols-[0.78fr_1.22fr]">
@@ -459,6 +659,128 @@ export function LandingPage() {
               </div>
             </div>
           </Reveal>
+        </section>
+
+        <section className="border-y bg-muted px-5 py-24 lg:px-8">
+          <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
+            <Reveal>
+              <div className="lg:sticky lg:top-28">
+                <p className="text-subheading text-primary">Focused Release 1</p>
+                <h2 className="mt-4 max-w-lg text-4xl font-medium leading-tight tracking-[-0.035em] text-balance sm:text-5xl">
+                  Clear about what works now—and what comes later.
+                </h2>
+                <p className="mt-5 max-w-lg text-body text-muted-foreground text-pretty">
+                  FigureLab is building the complete editable-flowchart loop before expanding into additional figure modes or cloud collaboration.
+                </p>
+                <Button className="mt-8" asChild>
+                  <Link href="/create">
+                    Create a flowchart
+                    <ArrowUpRightIcon aria-hidden="true" />
+                  </Link>
+                </Button>
+              </div>
+            </Reveal>
+
+            <div className="grid gap-6">
+              <Reveal delay={0.04}>
+                <article className="rounded-2xl bg-background p-6 shadow-regular-sm ring-1 ring-border sm:p-8">
+                  <div className="flex items-center gap-3">
+                    <span className="grid size-10 place-items-center rounded-lg bg-success-lighter text-success">
+                      <CheckCircle2Icon className="size-5" aria-hidden="true" />
+                    </span>
+                    <div>
+                      <p className="text-caption text-muted-foreground">Available in the current local release</p>
+                      <h3 className="mt-1 text-xl font-medium tracking-[-0.02em]">The complete flowchart loop</h3>
+                    </div>
+                  </div>
+                  <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                    {releaseCapabilities.map((item) => (
+                      <span key={item} className="flex items-start gap-2 rounded-xl bg-muted p-4 text-ui">
+                        <CheckIcon className="mt-0.5 size-4 shrink-0 text-success" aria-hidden="true" />
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                </article>
+              </Reveal>
+
+              <Reveal delay={0.08}>
+                <article className="rounded-2xl bg-background p-6 shadow-regular-xs ring-1 ring-border sm:p-8">
+                  <div className="flex items-center gap-3">
+                    <span className="grid size-10 place-items-center rounded-lg bg-accent text-primary">
+                      <InfoIcon className="size-5" aria-hidden="true" />
+                    </span>
+                    <div>
+                      <p className="text-caption text-muted-foreground">Intentionally not implied yet</p>
+                      <h3 className="mt-1 text-xl font-medium tracking-[-0.02em]">Expansion after the core loop</h3>
+                    </div>
+                  </div>
+                  <div className="mt-6 divide-y">
+                    {laterCapabilities.map((item) => (
+                      <p key={item} className="flex items-center gap-3 py-3 text-ui text-muted-foreground">
+                        <LockIcon className="size-4 shrink-0 text-hollow" aria-hidden="true" />
+                        {item}
+                      </p>
+                    ))}
+                  </div>
+                </article>
+              </Reveal>
+
+              <Reveal delay={0.12}>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-xl bg-background p-5 shadow-regular-xs ring-1 ring-border">
+                    <DatabaseIcon className="size-5 text-primary" aria-hidden="true" />
+                    <p className="mt-4 text-title-sm">Local workspace</p>
+                    <p className="mt-2 text-caption text-muted-foreground">Projects and recovery snapshots stay in this browser today.</p>
+                  </div>
+                  <div className="rounded-xl bg-background p-5 shadow-regular-xs ring-1 ring-border">
+                    <FileTextIcon className="size-5 text-primary" aria-hidden="true" />
+                    <p className="mt-4 text-title-sm">Structured document</p>
+                    <p className="mt-2 text-caption text-muted-foreground">The editable graph—not an exported image—is the source of truth.</p>
+                  </div>
+                  <div className="rounded-xl bg-background p-5 shadow-regular-xs ring-1 ring-border">
+                    <DownloadIcon className="size-5 text-primary" aria-hidden="true" />
+                    <p className="mt-4 text-title-sm">Deterministic export</p>
+                    <p className="mt-2 text-caption text-muted-foreground">SVG and PNG are rendered from the latest structured revision.</p>
+                  </div>
+                </div>
+              </Reveal>
+            </div>
+          </div>
+        </section>
+
+        <section id="faq" className="scroll-mt-20 px-5 py-24 lg:px-8">
+          <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.72fr_1.28fr] lg:gap-16">
+            <Reveal>
+              <div>
+                <p className="text-subheading text-primary">Questions before you start</p>
+                <h2 className="mt-4 max-w-lg text-4xl font-medium leading-tight tracking-[-0.035em] text-balance sm:text-5xl">
+                  Know exactly what the current product does.
+                </h2>
+                <p className="mt-5 max-w-lg text-body text-muted-foreground text-pretty">
+                  No inflated feature claims. The local release is focused on taking one editable scientific flowchart from prompt to verified export.
+                </p>
+                <Button className="mt-8" variant="outline" asChild>
+                  <Link href="/api">Read the local API docs</Link>
+                </Button>
+              </div>
+            </Reveal>
+
+            <Reveal delay={0.06}>
+              <Accordion type="single" defaultValue="available" collapsible className="border-y">
+                {faqItems.map((item) => (
+                  <AccordionItem key={item.id} value={item.id}>
+                    <AccordionTrigger className="min-h-16 py-5 text-left text-title-sm hover:no-underline">
+                      {item.question}
+                    </AccordionTrigger>
+                    <AccordionContent className="max-w-2xl pb-6 text-body text-muted-foreground text-pretty">
+                      <p>{item.answer}</p>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </Reveal>
+          </div>
         </section>
 
         <section className="border-y bg-muted px-5 py-20 lg:px-8">
